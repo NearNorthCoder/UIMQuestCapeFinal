@@ -6,6 +6,15 @@ import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.earlyessentials.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
 
+
+import org.dreambot.api.methods.container.impl.Inventory;
+import org.dreambot.uimquestcape.State;
+import org.dreambot.uimquestcape.UIMQuestCape;
+import org.dreambot.uimquestcape.states.earlyessentials.*;
+import org.dreambot.uimquestcape.util.QuestVarbitManager;
+import org.dreambot.uimquestcape.util.StateGroup; // Add this import
+
+
 /**
  * Group for early game essentials like looting bag and initial money
  */
