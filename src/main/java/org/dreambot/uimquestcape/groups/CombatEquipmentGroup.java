@@ -12,6 +12,7 @@ import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.barbassault.*;
 import org.dreambot.uimquestcape.states.quests.monkeymadness.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
+import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for mid-game combat equipment acquisition

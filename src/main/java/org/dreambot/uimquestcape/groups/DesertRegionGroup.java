@@ -12,6 +12,7 @@ import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.quests.thefeud.*;
 import org.dreambot.uimquestcape.states.quests.spiritsofelid.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
+import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for desert region quests and content

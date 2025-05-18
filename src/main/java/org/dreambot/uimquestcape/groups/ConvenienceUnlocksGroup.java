@@ -9,6 +9,7 @@ import org.dreambot.uimquestcape.states.ardougnediary.*;
 import org.dreambot.uimquestcape.states.quests.lostcity.*;
 import org.dreambot.uimquestcape.states.quests.fairytale.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
+import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for early convenience unlocks like magic training, cloak, and fairy rings
