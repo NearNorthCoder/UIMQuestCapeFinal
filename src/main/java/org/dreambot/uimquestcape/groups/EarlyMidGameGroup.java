@@ -2,13 +2,11 @@ package org.dreambot.uimquestcape.groups;
 
 import org.dreambot.api.methods.skills.Skills;
 import org.dreambot.api.methods.container.impl.Inventory;
-import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.State;
 import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.quests.rfd.*;
 import org.dreambot.uimquestcape.states.wintertodt.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
-import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for Recipe for Disaster initial subquests and Wintertodt

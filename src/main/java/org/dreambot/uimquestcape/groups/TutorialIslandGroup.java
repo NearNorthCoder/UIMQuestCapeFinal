@@ -3,14 +3,10 @@ package org.dreambot.uimquestcape.groups;
 import org.dreambot.api.methods.interactive.Players;
 import org.dreambot.api.methods.map.Area;
 import org.dreambot.api.methods.map.Tile;
-import org.dreambot.api.methods.settings.PlayerSettings;
-import org.dreambot.api.methods.walking.impl.Walking;
-import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.State;
 import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.tutorial.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
-import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for all Tutorial Island states

@@ -2,13 +2,10 @@ package org.dreambot.uimquestcape.groups;
 
 import org.dreambot.api.methods.container.impl.Inventory;
 import org.dreambot.api.methods.interactive.NPCs;
-import org.dreambot.api.methods.map.Area;
-import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.State;
 import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.lumbridge.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
-import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for initial Lumbridge setup states

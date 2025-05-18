@@ -7,12 +7,10 @@ package org.dreambot.uimquestcape.groups;
 
 import org.dreambot.api.methods.skills.Skills;
 import org.dreambot.api.methods.container.impl.Inventory;
-import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.State;
 import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.slayer.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
-import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for slayer progression and black mask/slayer helmet acquisition

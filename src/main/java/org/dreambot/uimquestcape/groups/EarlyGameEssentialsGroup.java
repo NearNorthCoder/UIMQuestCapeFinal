@@ -1,14 +1,10 @@
 package org.dreambot.uimquestcape.groups;
 
 import org.dreambot.api.methods.container.impl.Inventory;
-import org.dreambot.api.methods.container.impl.bank.Bank;
-import org.dreambot.api.methods.walking.impl.Walking;
-import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.State;
 import org.dreambot.uimquestcape.UIMQuestCape;
 import org.dreambot.uimquestcape.states.earlyessentials.*;
 import org.dreambot.uimquestcape.util.QuestVarbitManager;
-import org.dreambot.uimquestcape.util.StateGroup;
 
 /**
  * Group for early game essentials like looting bag and initial money
