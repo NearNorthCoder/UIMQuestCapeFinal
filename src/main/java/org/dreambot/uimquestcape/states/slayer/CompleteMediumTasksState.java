@@ -1,7 +1,5 @@
 package org.dreambot.uimquestcape.states.slayer;
 
-public class CompleteMediumTasksState package org.dreambot.uimquestcape.states.slayer;
-
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.AbstractState;
 import org.dreambot.uimquestcape.UIMQuestCape;
@@ -23,5 +21,4 @@ public class CompleteMediumTasksState extends AbstractState {
     public boolean canExecute() {
         return true;
     }
-}{
 }
