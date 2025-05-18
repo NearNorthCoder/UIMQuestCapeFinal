@@ -19,7 +19,7 @@ import org.dreambot.uimquestcape.util.StateGroup;
 public class EarlyCombatQuestsGroup extends StateGroup {
     
     // Constants for quest completion status
-    private static final int WITCHS_HOUSE_QUEST_ID = 20;
+    private static final int WITCHS_HOUSE_QUEST_ID = 67;
     private static final int WATERFALL_QUEST_ID = 65;
     private static final int FIGHT_ARENA_QUEST_ID = 17;
     private static final int TREE_GNOME_VILLAGE_QUEST_ID = 62;
@@ -32,67 +32,45 @@ public class EarlyCombatQuestsGroup extends StateGroup {
     private void registerStates() {
         // Initial combat training states
         addState(new TravelToBarbarianVillageState(getScript()));
+        addState(new GetFoodState(getScript()));
+        addState(new WeaponUpgradeState(getScript()));
         addState(new TrainAttackState(getScript()));
         addState(new TrainStrengthState(getScript()));
         
         // Witch's House quest states
+        // These would need to be implemented
         addState(new WitchsHouseStartState(getScript()));
-        addState(new GetCheesState(getScript()));
-        addState(new MouseHoleState(getScript()));
-        addState(new FindMagnetState(getScript()));
-        addState(new GetBasementKeyState(getScript()));
-        addState(new EnterGardenState(getScript()));
-        addState(new DefeatMouseFormsState(getScript()));
-        addState(new WitchsHouseCompleteState(getScript()));
+        // ... other Witch's House states
         
         // Waterfall Quest states
+        // These would need to be implemented
         addState(new WaterfallStartState(getScript()));
-        addState(new SpeakHudonState(getScript()));
-        addState(new FindCrateState(getScript()));
-        addState(new EnterWaterfallDungeonState(getScript()));
-        addState(new GetGlarialsPebbleState(getScript()));
-        addState(new EnterGlarialsTombState(getScript()));
-        addState(new GetGlarialsAmuletState(getScript()));
-        addState(new GetGlarialsUrnState(getScript()));
-        addState(new ReturnToWaterfallState(getScript()));
-        addState(new NavigateDungeonState(getScript()));
-        addState(new UseAmuletOnDoorState(getScript()));
-        addState(new UseUrnOnStandState(getScript()));
-        addState(new WaterfallCompleteState(getScript()));
+        // ... other Waterfall Quest states
         
         // Fight Arena quest states
+        // These would need to be implemented
         addState(new FightArenaStartState(getScript()));
-        addState(new KillBouncerState(getScript()));
-        addState(new FreePrisonersState(getScript()));
-        addState(new DefeatBouncerInArenaState(getScript()));
-        addState(new FightArenaCompleteState(getScript()));
+        // ... other Fight Arena states
         
         // Tree Gnome Village quest states
+        // These would need to be implemented
         addState(new TreeGnomeVillageStartState(getScript()));
-        addState(new NavigateMazeState(getScript()));
-        addState(new SpeakKingBolrenState(getScript()));
-        addState(new GetOrbsState(getScript()));
-        addState(new ReturnOrbsState(getScript()));
-        addState(new DefeatWarlordState(getScript()));
-        addState(new TreeGnomeVillageCompleteState(getScript()));
+        // ... other Tree Gnome Village states
         
         // Link states in sequence
         linkStates();
     }
     
     private void linkStates() {
-        // Too many state transitions to show individually, but they follow the quest guides
-        // Example of linking combat training states
-        getStateByName("TravelToBarbarianVillageState").setNextState(getStateByName("TrainAttackState"));
+        // Combat training sequence
+        getStateByName("TravelToBarbarianVillageState").setNextState(getStateByName("GetFoodState"));
+        getStateByName("GetFoodState").setNextState(getStateByName("WeaponUpgradeState"));
+        getStateByName("WeaponUpgradeState").setNextState(getStateByName("TrainAttackState"));
         getStateByName("TrainAttackState").setNextState(getStateByName("TrainStrengthState"));
         getStateByName("TrainStrengthState").setNextState(getStateByName("WitchsHouseStartState"));
         
         // Link last state of each quest to first state of next quest
-        getStateByName("WitchsHouseCompleteState").setNextState(getStateByName("WaterfallStartState"));
-        getStateByName("WaterfallCompleteState").setNextState(getStateByName("FightArenaStartState"));
-        getStateByName("FightArenaCompleteState").setNextState(getStateByName("TreeGnomeVillageStartState"));
-        
-        // Last state would connect to next group's first state
+        // ... these would need to be implemented as the quest states are created
     }
     
     @Override
@@ -104,7 +82,7 @@ public class EarlyCombatQuestsGroup extends StateGroup {
     public boolean requirementsMet() {
         // Check if early game essentials are obtained
         return Inventory.contains("Looting bag") && 
-               Inventory.count(995) >= 10000 && 
+               Inventory.count("Coins") >= 10000 && 
                Inventory.contains("Law rune") &&
                Inventory.contains("Games necklace");
     }
@@ -135,8 +113,28 @@ public class EarlyCombatQuestsGroup extends StateGroup {
             return getStateByName("WitchsHouseStartState");
         } else if (attackLevel >= 15) {
             return getStateByName("TrainStrengthState");
-        } else {
+        } else if (Inventory.contains("Steel sword") || 
+                  Inventory.contains("Mithril sword") || 
+                  Inventory.contains("Black sword")) {
             return getStateByName("TrainAttackState");
+        } else if (countFood() >= 5) {
+            return getStateByName("WeaponUpgradeState");
+        } else {
+            return getStateByName("GetFoodState");
         }
+    }
+    
+    // Helper method to count food items
+    private int countFood() {
+        return Inventory.count(item -> 
+            item != null && 
+            (item.hasAction("Eat") || 
+             item.getName().contains("Bread") ||
+             item.getName().contains("Cake") ||
+             item.getName().contains("Meat") ||
+             item.getName().contains("Shrimp") ||
+             item.getName().contains("Lobster") ||
+             item.getName().contains("Fish"))
+        );
     }
 }

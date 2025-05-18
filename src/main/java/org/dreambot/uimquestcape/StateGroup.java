@@ -18,12 +18,12 @@ public abstract class StateGroup implements Serializable {
     private final Map<String, State> stateMap = new HashMap<>();
     private transient UIMQuestCape script;
     private boolean completed = false;
-    
+
     public StateGroup(UIMQuestCape script, String groupName) {
         this.script = script;
         this.groupName = groupName;
     }
-    
+
     /**
      * Adds a state to this group
      * @param state The state to add
@@ -32,7 +32,7 @@ public abstract class StateGroup implements Serializable {
         states.add(state);
         stateMap.put(state.getName(), state);
     }
-    
+
     /**
      * Gets all states in this group
      * @return List of states
@@ -40,7 +40,7 @@ public abstract class StateGroup implements Serializable {
     public List<State> getStates() {
         return states;
     }
-    
+
     /**
      * Gets a state by name
      * @param name Name of the state
@@ -49,7 +49,7 @@ public abstract class StateGroup implements Serializable {
     public State getStateByName(String name) {
         return stateMap.get(name);
     }
-    
+
     /**
      * Gets the group name
      * @return Group name
@@ -57,7 +57,7 @@ public abstract class StateGroup implements Serializable {
     public String getGroupName() {
         return groupName;
     }
-    
+
     /**
      * Sets the script reference (needed after deserialization)
      * @param script The script instance
@@ -65,7 +65,7 @@ public abstract class StateGroup implements Serializable {
     public void setScript(UIMQuestCape script) {
         this.script = script;
     }
-    
+
     /**
      * Gets the script reference
      * @return The script instance
@@ -73,13 +73,13 @@ public abstract class StateGroup implements Serializable {
     protected UIMQuestCape getScript() {
         return script;
     }
-    
+
     /**
      * Gets the initial state for this group
      * @return The first state to execute in this group
      */
     public abstract State getInitialState();
-    
+
     /**
      * Checks if this group has been completed
      * @return true if group is completed
@@ -87,7 +87,7 @@ public abstract class StateGroup implements Serializable {
     public boolean isCompleted() {
         return completed;
     }
-    
+
     /**
      * Marks this group as completed
      */
@@ -95,13 +95,13 @@ public abstract class StateGroup implements Serializable {
         this.completed = true;
         Logger.log("Completed state group: " + getGroupName());
     }
-    
+
     /**
      * Checks if requirements are met to begin this group
      * @return true if requirements are met
      */
     public abstract boolean requirementsMet();
-    
+
     /**
      * Determines the current state within this group based on game conditions
      * @return The current state or initial state if cannot be determined

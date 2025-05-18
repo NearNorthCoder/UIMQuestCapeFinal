@@ -6,13 +6,13 @@ import java.util.Stack;
 import org.dreambot.api.utilities.Logger;
 
 // Manages all state transitions and state retrieval
-public class StateManager {
+public class StatManager {
     private final UIMQuestCape script;
     private State currentState;
     private Map<String, State> allStates = new HashMap<>();
     private Stack<State> stateHistory = new Stack<>();
 
-    public StateManager(UIMQuestCape script) {
+    public StatManager(UIMQuestCape script) {
         this.script = script;
     }
 

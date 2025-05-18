@@ -19,7 +19,7 @@ import org.dreambot.uimquestcape.util.StateGroup;
 public class UIMQuestCape extends AbstractScript {
 
     // Core state machine components
-    private StateManager stateManager;
+    private StatManager statManager;
     private StateDetector stateDetector;
     private ErrorHandler errorHandler;
     private ProgressTracker progressTracker;
@@ -32,7 +32,7 @@ public class UIMQuestCape extends AbstractScript {
     @Override
     public void onStart() {
         // Initialize components
-        stateManager = new StateManager(this);
+        statManager = new StatManager(this);
         stateDetector = new StateDetector(this);
         errorHandler = new ErrorHandler(this);
         progressTracker = new ProgressTracker(this);
@@ -47,7 +47,7 @@ public class UIMQuestCape extends AbstractScript {
         Logger.log("UIM Quest Cape Bot started with group: " + 
                  (currentGroup != null ? currentGroup.getGroupName() : "None") + 
                  " and state: " + 
-                 (stateManager.getCurrentState() != null ? stateManager.getCurrentState().getName() : "None"));
+                 (statManager.getCurrentState() != null ? statManager.getCurrentState().getName() : "None"));
     }
     
     @Override
@@ -64,7 +64,7 @@ public class UIMQuestCape extends AbstractScript {
             }
             
             // Get current state
-            State currentState = stateManager.getCurrentState();
+            State currentState = statManager.getCurrentState();
             if (currentState == null) {
                 Logger.error("No current state - determining new state");
                 determineStartingPoint();
@@ -81,7 +81,7 @@ public class UIMQuestCape extends AbstractScript {
             if (currentState.isCompleted()) {
                 State nextState = currentState.getNextState();
                 if (nextState != null) {
-                    stateManager.setCurrentState(nextState);
+                    statManager.setCurrentState(nextState);
                     Logger.log("Transitioning to state: " + nextState.getName());
                 } else if (currentGroup != null) {
                     // If no next state but group not marked complete, try to determine next state
@@ -104,7 +104,7 @@ public class UIMQuestCape extends AbstractScript {
         // Save current progress
         progressTracker.saveProgress();
         Logger.log("UIM Quest Cape Bot stopped at state: " + 
-                 (stateManager.getCurrentState() != null ? stateManager.getCurrentState().getName() : "None"));
+                 (statManager.getCurrentState() != null ? statManager.getCurrentState().getName() : "None"));
     }
     
     /**
@@ -123,7 +123,7 @@ public class UIMQuestCape extends AbstractScript {
         // Register all states from all groups with state manager
         for (StateGroup group : stateGroups) {
             for (State state : group.getStates()) {
-                stateManager.registerState(state);
+                statManager.registerState(state);
             }
         }
     }
@@ -138,7 +138,7 @@ public class UIMQuestCape extends AbstractScript {
                 currentGroup = group;
                 State startingState = group.determineCurrentState();
                 if (startingState != null) {
-                    stateManager.setCurrentState(startingState);
+                    statManager.setCurrentState(startingState);
                 } else {
                     // If no current state in this group, mark as completed and continue
                     group.markCompleted();
@@ -151,7 +151,7 @@ public class UIMQuestCape extends AbstractScript {
         // If all groups are completed or requirements not met for any
         Logger.log("No valid group found - starting from beginning");
         currentGroup = stateGroups.get(0);
-        stateManager.setCurrentState(currentGroup.getInitialState());
+        statManager.setCurrentState(currentGroup.getInitialState());
     }
     
     /**
@@ -170,7 +170,7 @@ public class UIMQuestCape extends AbstractScript {
                 currentGroup = nextGroup;
                 State initialState = currentGroup.determineCurrentState();
                 if (initialState != null) {
-                    stateManager.setCurrentState(initialState);
+                    statManager.setCurrentState(initialState);
                     Logger.log("Moving to next group: " + currentGroup.getGroupName() + 
                                " with state: " + initialState.getName());
                 } else {
@@ -192,8 +192,8 @@ public class UIMQuestCape extends AbstractScript {
     }
     
     // Getters for core components
-    public StateManager getStateManager() {
-        return stateManager;
+    public StatManager getStateManager() {
+        return statManager;
     }
     
     public StateDetector getStateDetector() {

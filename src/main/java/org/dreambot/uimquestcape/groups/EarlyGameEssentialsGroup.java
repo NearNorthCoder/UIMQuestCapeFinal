@@ -25,26 +25,29 @@ public class EarlyGameEssentialsGroup extends StateGroup {
     }
     
     private void registerStates() {
-        // Looting bag subgroup
+        // Initial Cash Acquisition subgroup
         addState(new TravelToEdgevilleState(getScript()));
-        addState(new EnterEdgevilleDungeonState(getScript()));
+        addState(new AcquireSteelPlatebodyState(getScript()));
+        addState(new SellSteelPlatebodyState(getScript()));
+        
+        // Looting bag subgroup
         addState(new AcquireLootingBagState(getScript()));
         
         // Stronghold of Security subgroup
         addState(new TravelToBarbarianVillageState(getScript()));
         addState(new EnterStrongholdState(getScript()));
         addState(new CompleteFirstFloorState(getScript()));
-        addState(new CompleteSecondFloorState(getScript()));
-        addState(new CompleteThirdFloorState(getScript()));
-        addState(new CompleteFourthFloorState(getScript()));
+        addState(new CompleteSecondFloorState(getScript())); // This would need to be implemented
+        addState(new CompleteThirdFloorState(getScript())); // This would need to be implemented
+        addState(new CompleteFourthFloorState(getScript())); // This would need to be implemented
         
         // Teleport acquisition subgroup
         addState(new TravelToVarrockState(getScript()));
         addState(new BuyFireRunesState(getScript()));
         addState(new BuyAirRunesState(getScript()));
         addState(new BuyLawRunesState(getScript()));
-        addState(new TravelToGrandExchangeState(getScript()));
-        addState(new BuyGamesNecklaceState(getScript()));
+        addState(new TravelToGrandExchangeState(getScript())); // This would need to be implemented
+        addState(new BuyGamesNecklaceState(getScript())); // This would need to be implemented
         
         // Link states in sequence
         linkStates();
@@ -53,9 +56,12 @@ public class EarlyGameEssentialsGroup extends StateGroup {
     private void linkStates() {
         // Set up the sequence of states
         
-        // Looting bag sequence
-        getStateByName("TravelToEdgevilleState").setNextState(getStateByName("EnterEdgevilleDungeonState"));
-        getStateByName("EnterEdgevilleDungeonState").setNextState(getStateByName("AcquireLootingBagState"));
+        // Initial Cash Acquisition sequence
+        getStateByName("TravelToEdgevilleState").setNextState(getStateByName("AcquireSteelPlatebodyState"));
+        getStateByName("AcquireSteelPlatebodyState").setNextState(getStateByName("SellSteelPlatebodyState"));
+        getStateByName("SellSteelPlatebodyState").setNextState(getStateByName("AcquireLootingBagState"));
+        
+        // Looting Bag to Stronghold
         getStateByName("AcquireLootingBagState").setNextState(getStateByName("TravelToBarbarianVillageState"));
         
         // Stronghold sequence
@@ -93,7 +99,7 @@ public class EarlyGameEssentialsGroup extends StateGroup {
         // Determine progress based on acquired items and completed content
         boolean hasLootingBag = Inventory.contains("Looting bag");
         boolean hasCompletedStronghold = QuestVarbitManager.getVarbit(STRONGHOLD_VARBIT) == STRONGHOLD_COMPLETED;
-        boolean has10kCoins = Inventory.count(995) >= 10000;
+        boolean has10kCoins = Inventory.count("Coins") >= 10000;
         boolean hasFireRunes = Inventory.contains("Fire rune");
         boolean hasAirRunes = Inventory.contains("Air rune");
         boolean hasLawRunes = Inventory.contains("Law rune");
@@ -115,6 +121,8 @@ public class EarlyGameEssentialsGroup extends StateGroup {
             return getStateByName("TravelToVarrockState");
         } else if (hasLootingBag) {
             return getStateByName("TravelToBarbarianVillageState");
+        } else if (Inventory.count("Coins") >= 1200) {
+            return getStateByName("AcquireLootingBagState");
         } else {
             // No requirements met, start from beginning
             return getStateByName("TravelToEdgevilleState");

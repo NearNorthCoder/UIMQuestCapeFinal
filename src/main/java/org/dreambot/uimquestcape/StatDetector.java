@@ -3,10 +3,10 @@ package org.dreambot.uimquestcape;
 import org.dreambot.api.utilities.Logger;
 
 // Detects the current state based on game conditions
-public class StateDetector {
+public class StatDetector {
     private final UIMQuestCape script;
 
-    public StateDetector(UIMQuestCape script) {
+    public StatDetector(UIMQuestCape script) {
         this.script = script;
     }
 

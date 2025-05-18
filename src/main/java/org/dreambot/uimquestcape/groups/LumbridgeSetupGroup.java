@@ -55,6 +55,7 @@ public class LumbridgeSetupGroup extends StateGroup {
     public State determineCurrentState() {
         // Check for possession of key items to determine progress
         boolean hasSetSpawn = hasSpawnSetInLumbridge();
+        boolean hasCollectedItems = hasCollectedBasicItems();
         boolean hasKnife = Inventory.contains("Knife");
         boolean hasHammer = Inventory.contains("Hammer");
         boolean hasBranchCutter = Inventory.contains("Dramen branch cutter");
@@ -66,8 +67,10 @@ public class LumbridgeSetupGroup extends StateGroup {
             return getStateByName("BuyBranchCutterState");
         } else if (hasKnife) {
             return getStateByName("BuyHammerState");
-        } else if (hasSetSpawn) {
+        } else if (hasCollectedItems) {
             return getStateByName("BuyKnifeState");
+        } else if (hasSetSpawn) {
+            return getStateByName("CollectItemsState");
         } else {
             return getStateByName("SetSpawnPointState");
         }
@@ -75,12 +78,14 @@ public class LumbridgeSetupGroup extends StateGroup {
     
     // Helper method to check if spawn is set in Lumbridge
     private boolean hasSpawnSetInLumbridge() {
-        // In a real implementation, this would check specific game variables
-        // For now, we'll use a placeholder logic
-        
-        // One approach is to check if we've spoken to the Lumbridge Guide
+        // Check if we've spoken to the Lumbridge Guide
         return NPCs.closest("Lumbridge Guide") != null && 
                NPCs.closest("Lumbridge Guide").distance() < 10 &&
                QuestVarbitManager.getVarbit(281) >= 1000;
+    }
+    
+    // Helper method to check if we've collected basic items
+    private boolean hasCollectedBasicItems() {
+        return Inventory.contains("Pot") && Inventory.contains("Jug");
     }
 }
