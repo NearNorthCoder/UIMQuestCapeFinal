@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class Quests {
     private static final List<Quest> quests = new ArrayList<>();
-    
+
     static {
         // Initialize with some common quests
         quests.add(new Quest(2, "Cook's Assistant", 1));
@@ -24,7 +24,7 @@ public class Quests {
         quests.add(new Quest(65, "Waterfall Quest", 1));
         quests.add(new Quest(67, "Witch's House", 4));
     }
-    
+
     /**
      * Gets all available quests
      * @return List of all quests
@@ -32,7 +32,7 @@ public class Quests {
     public static List<Quest> getAll() {
         return quests;
     }
-    
+
     /**
      * Gets a quest by ID
      * @param id Quest ID

@@ -70,7 +70,7 @@ public abstract class StateGroup implements Serializable {
      * Gets the script reference
      * @return The script instance
      */
-    protected UIMQuestCape getScript() {
+    public UIMQuestCape getScript() {
         return script;
     }
 
