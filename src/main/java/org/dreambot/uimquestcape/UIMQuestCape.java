@@ -7,6 +7,7 @@ import org.dreambot.api.script.Category;
 import org.dreambot.api.script.ScriptManifest;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.groups.*;
+import org.dreambot.uimquestcape.util.StateGroup;
 
 @ScriptManifest(
         name = "UIM Quest Cape",
