@@ -24,7 +24,7 @@ public abstract class AbstractState implements State {
         return completed;
     }
 
-    @Override
+    
     public State getNextState() {
         return nextState;
     }

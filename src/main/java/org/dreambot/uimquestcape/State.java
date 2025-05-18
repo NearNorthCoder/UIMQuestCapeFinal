@@ -21,12 +21,12 @@ public interface State {
      * @return true if state is completed
      */
     boolean isCompleted();
-    
+
     /**
-     * Gets the next state to transition to after this one completes
-     * @return next state
+     * Sets the next state that should be executed after this one completes.
+     * @param nextState The next State instance to execute.
      */
-    State getNextState();
+    void setNextState(State nextState);
     
     /**
      * Checks if this state can execute based on current conditions
