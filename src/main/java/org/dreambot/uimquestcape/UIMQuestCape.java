@@ -1,9 +1,13 @@
 package org.dreambot.uimquestcape;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.dreambot.api.script.AbstractScript;
 import org.dreambot.api.script.Category;
 import org.dreambot.api.script.ScriptManifest;
 import org.dreambot.api.utilities.Logger;
+import org.dreambot.uimquestcape.groups.*;
+import org.dreambot.uimquestcape.util.StateGroup;
 
 @ScriptManifest(
         name = "UIM Quest Cape",
@@ -19,7 +23,12 @@ public class UIMQuestCape extends AbstractScript {
     private StateDetector stateDetector;
     private ErrorHandler errorHandler;
     private ProgressTracker progressTracker;
-
+    private ConfigManager configManager;
+    
+    // State groups for progression segments
+    private List<StateGroup> stateGroups = new ArrayList<>();
+    private StateGroup currentGroup;
+    
     @Override
     public void onStart() {
         // Initialize components
@@ -27,17 +36,20 @@ public class UIMQuestCape extends AbstractScript {
         stateDetector = new StateDetector(this);
         errorHandler = new ErrorHandler(this);
         progressTracker = new ProgressTracker(this);
-
-        // Register all states with state manager
-        registerAllStates();
-
-        // Set initial state based on detected progress
-        State initialState = stateDetector.determineState();
-        stateManager.setCurrentState(initialState);
-
-        Logger.log("UIM Quest Cape Bot started in state: " + initialState.getName());
+        configManager = new ConfigManager(this);
+        
+        // Register all state groups
+        registerStateGroups();
+        
+        // Determine starting group and state based on current progress
+        determineStartingPoint();
+        
+        Logger.log("UIM Quest Cape Bot started with group: " + 
+                 (currentGroup != null ? currentGroup.getGroupName() : "None") + 
+                 " and state: " + 
+                 (stateManager.getCurrentState() != null ? stateManager.getCurrentState().getName() : "None"));
     }
-
+    
     @Override
     public int onLoop() {
         try {
@@ -45,23 +57,39 @@ public class UIMQuestCape extends AbstractScript {
             if (errorHandler.isErrorState()) {
                 return errorHandler.handleError();
             }
-
+            
+            // If current group is complete, move to next group
+            if (currentGroup != null && currentGroup.isCompleted()) {
+                moveToNextGroup();
+            }
+            
             // Get current state
             State currentState = stateManager.getCurrentState();
-
+            if (currentState == null) {
+                Logger.error("No current state - determining new state");
+                determineStartingPoint();
+                return 1000;
+            }
+            
             // Log current progress periodically
             progressTracker.updateProgress(currentState);
-
+            
             // Execute current state
             int sleepTime = currentState.execute();
-
+            
             // Check if state is completed
             if (currentState.isCompleted()) {
                 State nextState = currentState.getNextState();
-                stateManager.setCurrentState(nextState);
-                Logger.log("Transitioning to state: " + nextState.getName());
+                if (nextState != null) {
+                    stateManager.setCurrentState(nextState);
+                    Logger.log("Transitioning to state: " + nextState.getName());
+                } else if (currentGroup != null) {
+                    // If no next state but group not marked complete, try to determine next state
+                    currentGroup.markCompleted();
+                    moveToNextGroup();
+                }
             }
-
+            
             return sleepTime;
         } catch (Exception e) {
             // Any uncaught exceptions are logged and handled
@@ -70,39 +98,117 @@ public class UIMQuestCape extends AbstractScript {
             return errorHandler.getErrorSleepTime();
         }
     }
-
+    
     @Override
     public void onExit() {
         // Save current progress
         progressTracker.saveProgress();
-        Logger.log("UIM Quest Cape Bot stopped at state: " + stateManager.getCurrentState().getName());
+        Logger.log("UIM Quest Cape Bot stopped at state: " + 
+                 (stateManager.getCurrentState() != null ? stateManager.getCurrentState().getName() : "None"));
     }
-
-    // Register all states with state manager
-    private void registerAllStates() {
-        // Tutorial Island States
-        stateManager.registerState(new CreateAccountState(this));
-        stateManager.registerState(new GielinorGuideState(this));
-        // ... many more states registered here
-
-        // Final Quest Cape State
-        stateManager.registerState(new ClaimQuestCapeState(this));
+    
+    /**
+     * Register all state groups in progression order
+     */
+    private void registerStateGroups() {
+        // Add groups in sequence order
+        stateGroups.add(new TutorialIslandGroup(this));
+        stateGroups.add(new LumbridgeSetupGroup(this));
+        stateGroups.add(new EarlyGameEssentialsGroup(this));
+        stateGroups.add(new EarlyCombatQuestsGroup(this));
+        stateGroups.add(new ConvenienceUnlocksGroup(this));
+        stateGroups.add(new EarlyMidGameGroup(this));
+        // Add other groups for Desert region, combat equipment, slayer progression, etc.
+        
+        // Register all states from all groups with state manager
+        for (StateGroup group : stateGroups) {
+            for (State state : group.getStates()) {
+                stateManager.registerState(state);
+            }
+        }
     }
-
+    
+    /**
+     * Determine starting point based on current progress
+     */
+    private void determineStartingPoint() {
+        // Find the first non-completed group
+        for (StateGroup group : stateGroups) {
+            if (!group.isCompleted() && group.requirementsMet()) {
+                currentGroup = group;
+                State startingState = group.determineCurrentState();
+                if (startingState != null) {
+                    stateManager.setCurrentState(startingState);
+                } else {
+                    // If no current state in this group, mark as completed and continue
+                    group.markCompleted();
+                    continue;
+                }
+                return;
+            }
+        }
+        
+        // If all groups are completed or requirements not met for any
+        Logger.log("No valid group found - starting from beginning");
+        currentGroup = stateGroups.get(0);
+        stateManager.setCurrentState(currentGroup.getInitialState());
+    }
+    
+    /**
+     * Move to the next group in sequence
+     */
+    private void moveToNextGroup() {
+        if (currentGroup == null) {
+            determineStartingPoint();
+            return;
+        }
+        
+        int currentIndex = stateGroups.indexOf(currentGroup);
+        if (currentIndex < stateGroups.size() - 1) {
+            StateGroup nextGroup = stateGroups.get(currentIndex + 1);
+            if (nextGroup.requirementsMet()) {
+                currentGroup = nextGroup;
+                State initialState = currentGroup.determineCurrentState();
+                if (initialState != null) {
+                    stateManager.setCurrentState(initialState);
+                    Logger.log("Moving to next group: " + currentGroup.getGroupName() + 
+                               " with state: " + initialState.getName());
+                } else {
+                    Logger.error("No valid starting state for group: " + currentGroup.getGroupName());
+                    // Mark this group as completed since we can't proceed with it
+                    currentGroup.markCompleted();
+                    moveToNextGroup(); // Recursively try next group
+                }
+            } else {
+                Logger.error("Requirements not met for next group: " + nextGroup.getGroupName());
+                // Reassess current position
+                determineStartingPoint();
+            }
+        } else {
+            // All groups completed
+            Logger.log("All groups completed! Quest cape achieved!");
+            stop();
+        }
+    }
+    
     // Getters for core components
     public StateManager getStateManager() {
         return stateManager;
     }
-
+    
     public StateDetector getStateDetector() {
         return stateDetector;
     }
-
+    
     public ErrorHandler getErrorHandler() {
         return errorHandler;
     }
-
+    
     public ProgressTracker getProgressTracker() {
         return progressTracker;
+    }
+    
+    public ConfigManager getConfigManager() {
+        return configManager;
     }
 }
