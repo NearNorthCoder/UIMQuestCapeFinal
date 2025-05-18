@@ -1,11 +1,15 @@
 package org.dreambot.uimquestcape.util;
 
+import org.dreambot.api.methods.interactive.GameObjects;
 import org.dreambot.api.methods.interactive.Players;
 import org.dreambot.api.methods.map.Area;
+import org.dreambot.api.methods.map.Map;
 import org.dreambot.api.methods.map.Tile;
 import org.dreambot.api.methods.walking.impl.Walking;
+import org.dreambot.api.methods.walking.path.impl.LocalPath;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.api.utilities.Sleep;
+import org.dreambot.api.wrappers.interactive.GameObject;
 import org.dreambot.uimquestcape.UIMQuestCape;
 
 /**
@@ -13,6 +17,7 @@ import org.dreambot.uimquestcape.UIMQuestCape;
  */
 public class NavigationHelper {
     private final UIMQuestCape script;
+    private static final int MAX_WALKING_WAIT_TIME = 15000; // 15 seconds
     
     public NavigationHelper(UIMQuestCape script) {
         this.script = script;
@@ -34,9 +39,16 @@ public class NavigationHelper {
             return true;
         }
         
-        // Walk to destination
-        Logger.log("Walking to tile: " + tile.getX() + ", " + tile.getY());
-        return Walking.walk(tile);
+        // Check if we can reach the tile directly
+        if (Map.canReach(tile)) {
+            // Walk to destination
+            Logger.log("Walking to tile: " + tile.getX() + ", " + tile.getY());
+            return Walking.walk(tile);
+        } else {
+            // Try web walking for longer distances
+            Logger.log("Using web walking to reach tile: " + tile.getX() + ", " + tile.getY());
+            return Walking.walkExact(tile);
+        }
     }
     
     /**
@@ -57,7 +69,15 @@ public class NavigationHelper {
         
         // Walk to random tile in area
         Logger.log("Walking to area");
-        return Walking.walk(area.getRandomTile());
+        Tile destination = area.getRandomTile();
+        
+        // Check if we can reach the tile directly
+        if (Map.canReach(destination)) {
+            return Walking.walk(destination);
+        } else {
+            // Try web walking for longer distances
+            return Walking.walkExact(destination);
+        }
     }
     
     /**
@@ -67,10 +87,37 @@ public class NavigationHelper {
      * @return true if reached destination
      */
     public boolean walkToAndWait(Tile tile, int timeout) {
+        if (Players.getLocal().getTile().distance(tile) < 3) {
+            return true; // Already at destination
+        }
+        
         if (walkTo(tile)) {
             Logger.log("Walking to tile and waiting: " + tile.getX() + ", " + tile.getY());
-            return Sleep.sleepUntil(() -> Players.getLocal().getTile().distance(tile) < 3, timeout);
+            
+            // Wait for arrival with timeout
+            long startTime = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startTime < timeout) {
+                if (Players.getLocal().getTile().distance(tile) < 3) {
+                    return true; // Reached destination
+                }
+                
+                if (Players.getLocal().isMoving()) {
+                    // Reset timeout if we're moving
+                    startTime = System.currentTimeMillis();
+                }
+                
+                // If stuck, try again
+                if (!Players.getLocal().isMoving() && 
+                    System.currentTimeMillis() - startTime > 3000) {
+                    walkTo(tile);
+                }
+                
+                Sleep.sleep(300, 600);
+            }
+            
+            return Players.getLocal().getTile().distance(tile) < 3;
         }
+        
         return false;
     }
     
@@ -90,7 +137,7 @@ public class NavigationHelper {
      * @return true if the tile is reachable
      */
     public boolean canReach(Tile tile) {
-        return Walking.canWalk(tile);
+        return Map.canReach(tile);
     }
     
     /**
@@ -100,8 +147,54 @@ public class NavigationHelper {
      * @return true if successfully navigated
      */
     public boolean navigateObstacle(String obstacle, String action) {
-        // Implementation would find and interact with the obstacle
-        Logger.log("Navigating obstacle: " + obstacle + " with action: " + action);
-        return false; // Placeholder
+        GameObject gameObject = GameObjects.closest(obstacle);
+        
+        if (gameObject == null) {
+            Logger.error("Could not find obstacle: " + obstacle);
+            return false;
+        }
+        
+        if (gameObject.distance() > 5) {
+            walkTo(gameObject.getTile());
+            Sleep.sleepUntil(() -> gameObject.distance() <= 5, 5000);
+        }
+        
+        if (gameObject.hasAction(action)) {
+            Logger.log("Interacting with " + obstacle + " using action: " + action);
+            
+            boolean result = gameObject.interact(action);
+            Sleep.sleep(600, 1200);
+            
+            // Doors take an extra moment to open
+            if (action.contains("Open")) {
+                Sleep.sleep(1200, 1800);
+            }
+            
+            return result;
+        } else {
+            Logger.error("Obstacle does not have action: " + action);
+            return false;
+        }
+    }
+    
+    /**
+     * Navigate along a path of tiles
+     * @param path Array of tiles forming a path
+     * @return true if successfully navigated to the end of the path
+     */
+    public boolean followPath(Tile[] path) {
+        if (path == null || path.length == 0) {
+            return false;
+        }
+        
+        // Create a local path
+        LocalPath localPath = new LocalPath(path);
+        
+        // Follow the path
+        Logger.log("Following path of " + path.length + " tiles");
+        return localPath.traverse() && Sleep.sleepUntil(
+            () -> Players.getLocal().getTile().distance(path[path.length - 1]) < 3, 
+            MAX_WALKING_WAIT_TIME
+        );
     }
 }

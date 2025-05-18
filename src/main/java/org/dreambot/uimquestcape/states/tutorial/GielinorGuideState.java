@@ -1,49 +1,118 @@
-package org.dreambot.uimquestcape.states;
+package org.dreambot.uimquestcape.states.tutorial;
 
+import org.dreambot.api.methods.dialogues.Dialogues;
+import org.dreambot.api.methods.interactive.NPCs;
+import org.dreambot.api.methods.interactive.Players;
+import org.dreambot.api.methods.map.Area;
+import org.dreambot.api.methods.map.Tile;
+import org.dreambot.api.methods.settings.PlayerSettings;
+import org.dreambot.api.methods.walking.impl.Walking;
+import org.dreambot.api.methods.widget.Widgets;
 import org.dreambot.api.utilities.Logger;
+import org.dreambot.api.utilities.Sleep;
+import org.dreambot.api.wrappers.interactive.NPC;
+import org.dreambot.api.wrappers.widgets.WidgetChild;
 import org.dreambot.uimquestcape.AbstractState;
 import org.dreambot.uimquestcape.UIMQuestCape;
+import org.dreambot.uimquestcape.util.QuestVarbitManager;
 
-// Example implementation of a specific state
 public class GielinorGuideState extends AbstractState {
+    private static final int TUTORIAL_PROGRESS_VARBIT = 281;
+    private static final int GIELINOR_GUIDE_AREA_PROGRESS = 3;
+    private static final Area GIELINOR_GUIDE_AREA = new Area(
+            new Tile(3090, 3107, 0),
+            new Tile(3097, 3100, 0)
+    );
+    
     private boolean talkedToGuide = false;
     private boolean selectedUIM = false;
+    private boolean openedSettings = false;
     
     public GielinorGuideState(UIMQuestCape script) {
         super(script, "GielinorGuideState");
-        this.nextState = script.getStateManager().getStateByName("SurvivalExpertState");
     }
     
     @Override
     public int execute() {
-        // If we're not at Gielinor Guide, walk there
-        if (!isAtGielinorGuide()) {
+        int progress = QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT);
+        
+        // If we've progressed past this stage, mark as complete
+        if (progress > GIELINOR_GUIDE_AREA_PROGRESS) {
+            complete();
+            return 600;
+        }
+        
+        // If we're not at Gielinor Guide area, walk there
+        if (!GIELINOR_GUIDE_AREA.contains(Players.getLocal())) {
             Logger.log("Walking to Gielinor Guide");
-            walkToGielinorGuide();
+            Walking.walk(GIELINOR_GUIDE_AREA.getRandomTile());
             return 1000;
+        }
+        
+        // Handle dialogues if active
+        if (Dialogues.inDialogue()) {
+            return handleDialogue();
+        }
+        
+        // Open settings panel if prompted
+        if (!openedSettings && progress == 3) {
+            Logger.log("Opening settings tab");
+            WidgetChild settingsTab = Widgets.getWidgetChild(164, 41);
+            if (settingsTab != null && settingsTab.isVisible()) {
+                settingsTab.interact();
+                Sleep.sleepUntil(() -> PlayerSettings.getBitValue(TUTORIAL_PROGRESS_VARBIT) > 3, 3000);
+                openedSettings = true;
+                return 600;
+            }
         }
         
         // Talk to Gielinor Guide if we haven't
         if (!talkedToGuide) {
             Logger.log("Talking to Gielinor Guide");
-            if (talkToGielinorGuide()) {
-                talkedToGuide = true;
+            NPC guide = NPCs.closest("Gielinor Guide");
+            if (guide != null) {
+                guide.interact("Talk-to");
+                Sleep.sleepUntil(Dialogues::inDialogue, 5000);
+                return 600;
             }
-            return 1000;
         }
         
-        // Select Ultimate Ironman mode when speaking to Paul
-        if (!selectedUIM) {
-            Logger.log("Selecting Ultimate Ironman mode");
-            if (selectUltimateIronman()) {
-                selectedUIM = true;
+        return 600;
+    }
+    
+    private int handleDialogue() {
+        String npcName = Dialogues.getNPCName();
+        
+        // Handle Paul dialogue for Ironman mode selection
+        if ("Paul".equals(npcName) && !selectedUIM) {
+            String[] options = Dialogues.getOptions();
+            
+            // Select Ultimate Ironman mode
+            if (options != null) {
+                for (int i = 0; i < options.length; i++) {
+                    if (options[i].contains("Ultimate")) {
+                        Dialogues.clickOption(i + 1);
+                        Sleep.sleep(600, 1000);
+                        selectedUIM = true;
+                        return 600;
+                    }
+                }
             }
-            return 1000;
         }
         
-        // If all steps completed, mark state as complete
-        if (talkedToGuide && selectedUIM) {
-            complete();
+        // Continue dialogue with Gielinor Guide
+        if ("Gielinor Guide".equals(npcName)) {
+            talkedToGuide = true;
+        }
+        
+        // Continue dialogue
+        if (Dialogues.canContinue()) {
+            Dialogues.clickContinue();
+            return 600;
+        } else if (Dialogues.getOptions() != null) {
+            // For general option selection that's not Paul dialogue
+            Dialogues.clickOption(1);
+            return 600;
         }
         
         return 600;
@@ -51,38 +120,7 @@ public class GielinorGuideState extends AbstractState {
     
     @Override
     public boolean canExecute() {
-        // This state can only execute if we're on Tutorial Island
-        // and at the right stage
-        return isOnTutorialIsland() && !hasTalkedToSurvivalExpert();
-    }
-    
-    // Helper methods specific to this state
-    private boolean isAtGielinorGuide() {
-        // Implementation to check if player is at Gielinor Guide
-        return false; // Placeholder
-    }
-    
-    private void walkToGielinorGuide() {
-        // Implementation to walk to Gielinor Guide
-    }
-    
-    private boolean talkToGielinorGuide() {
-        // Implementation to talk to Gielinor Guide
-        return false; // Placeholder
-    }
-    
-    private boolean selectUltimateIronman() {
-        // Implementation to select Ultimate Ironman mode
-        return false; // Placeholder
-    }
-    
-    private boolean isOnTutorialIsland() {
-        // Check if player is on Tutorial Island
-        return false; // Placeholder
-    }
-    
-    private boolean hasTalkedToSurvivalExpert() {
-        // Check if player has already progressed to Survival Expert
-        return false; // Placeholder
+        int progress = QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT);
+        return progress >= 0 && progress <= GIELINOR_GUIDE_AREA_PROGRESS;
     }
 }

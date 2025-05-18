@@ -1,8 +1,12 @@
 package org.dreambot.uimquestcape.util;
 
-import org.dreambot.api.methods.widget.Widgets;
+import org.dreambot.api.methods.quest.Quest;
+import org.dreambot.api.methods.quest.Quests;
 import org.dreambot.api.methods.settings.PlayerSettings;
 import org.dreambot.api.utilities.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Utility class for accessing quest status and varbit information
@@ -33,13 +37,30 @@ public class QuestVarbitManager {
     public static final int QUEST_STARTED = 1;
     public static final int QUEST_COMPLETE = 2;
     
+    // Cache to prevent repeated lookups
+    private static final Map<Integer, Integer> varbitCache = new HashMap<>();
+    private static final Map<String, Integer> questStatusCache = new HashMap<>();
+    private static long lastCacheUpdate = 0;
+    private static final long CACHE_TIMEOUT = 5000; // 5 seconds
+    
     /**
      * Gets a varbit value from player settings
      * @param varbitId The varbit ID to check
      * @return The value of the varbit
      */
     public static int getVarbit(int varbitId) {
-        return PlayerSettings.getBitValue(varbitId);
+        // Update cache if needed
+        updateCacheIfNeeded();
+        
+        // Use cached value if available
+        if (varbitCache.containsKey(varbitId)) {
+            return varbitCache.get(varbitId);
+        }
+        
+        // Get and cache value
+        int value = PlayerSettings.getBitValue(varbitId);
+        varbitCache.put(varbitId, value);
+        return value;
     }
     
     /**
@@ -57,8 +78,6 @@ public class QuestVarbitManager {
      * @return true if the quest is completed
      */
     public static boolean isQuestCompleted(int questId) {
-        // In a real implementation, this would check the quest journal
-        // For simplicity, we'll use the QuestStatus widget value
         return getQuestStatus(questId) == QUEST_COMPLETE;
     }
     
@@ -68,40 +87,98 @@ public class QuestVarbitManager {
      * @return The quest status (0 = not started, 1 = started, 2 = completed)
      */
     public static int getQuestStatus(int questId) {
-        // This is a simplification - actual implementation would check quest-specific varbits
-        // Some quests use varbits, others use configs, and some use widget colors
+        // Update cache if needed
+        updateCacheIfNeeded();
         
-        // Example placeholder implementation
-        switch (questId) {
-            case COOKS_ASSISTANT_ID:
-                // Check the RFD varbit for Cook's Assistant completion
-                if (getVarbit(RECIPE_FOR_DISASTER_VARBIT) >= 1) {
-                    return QUEST_COMPLETE;
-                }
-                break;
-            case WITCHS_HOUSE_ID:
-                // Witch's House uses config 226
-                int witchsHouseStatus = getConfig(226);
-                if (witchsHouseStatus >= 7) {
-                    return QUEST_COMPLETE;
-                } else if (witchsHouseStatus >= 1) {
-                    return QUEST_STARTED;
-                }
-                break;
-            case WATERFALL_QUEST_ID:
-                // Waterfall uses config 65
-                int waterfallStatus = getConfig(65);
-                if (waterfallStatus >= 10) {
-                    return QUEST_COMPLETE;
-                } else if (waterfallStatus >= 1) {
-                    return QUEST_STARTED;
-                }
-                break;
-            // Add other quest status checks as needed
+        String cacheKey = "quest_" + questId;
+        if (questStatusCache.containsKey(cacheKey)) {
+            return questStatusCache.get(cacheKey);
         }
         
-        // Default to not started
-        return QUEST_NOT_STARTED;
+        int status = QUEST_NOT_STARTED;
+        
+        // Try to get from Quests API first
+        for (Quest quest : Quests.getAll()) {
+            if (quest.getIndex() == questId) {
+                if (quest.isFinished()) {
+                    status = QUEST_COMPLETE;
+                } else if (quest.getVarpValue() > 0) {
+                    status = QUEST_STARTED;
+                }
+                break;
+            }
+        }
+        
+        // If not found in Quests API, use varbits/configs
+        if (status == QUEST_NOT_STARTED) {
+            switch (questId) {
+                case COOKS_ASSISTANT_ID:
+                    if (getVarbit(RECIPE_FOR_DISASTER_VARBIT) >= 1) {
+                        status = QUEST_COMPLETE;
+                    }
+                    break;
+                case WITCHS_HOUSE_ID:
+                    int witchsHouseStatus = getConfig(226);
+                    if (witchsHouseStatus >= 7) {
+                        status = QUEST_COMPLETE;
+                    } else if (witchsHouseStatus >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+                case WATERFALL_QUEST_ID:
+                    int waterfallStatus = getConfig(65);
+                    if (waterfallStatus >= 10) {
+                        status = QUEST_COMPLETE;
+                    } else if (waterfallStatus >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+                case FIGHT_ARENA_ID:
+                    int fightArenaStatus = getConfig(17);
+                    if (fightArenaStatus >= 15) {
+                        status = QUEST_COMPLETE;
+                    } else if (fightArenaStatus >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+                case TREE_GNOME_VILLAGE_ID:
+                    int tgnStatus = getConfig(111);
+                    if (tgnStatus >= 10) {
+                        status = QUEST_COMPLETE;
+                    } else if (tgnStatus >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+                case LOST_CITY_ID:
+                    int lostCityStatus = getConfig(147);
+                    if (lostCityStatus >= 6) {
+                        status = QUEST_COMPLETE;
+                    } else if (lostCityStatus >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+                case FAIRY_TALE_PT1_ID:
+                    int ft1Status = getConfig(17);
+                    if (ft1Status >= 3) {
+                        status = QUEST_COMPLETE;
+                    } else if (ft1Status >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+                case FAIRY_TALE_PT2_ID:
+                    int ft2Status = getVarbit(FAIRY_TALE_PT2_VARBIT);
+                    if (ft2Status >= 100) {
+                        status = QUEST_COMPLETE;
+                    } else if (ft2Status >= 1) {
+                        status = QUEST_STARTED;
+                    }
+                    break;
+            }
+        }
+        
+        // Cache the result
+        questStatusCache.put(cacheKey, status);
+        return status;
     }
     
     /**
@@ -110,9 +187,28 @@ public class QuestVarbitManager {
      * @return The completion percentage (0-100)
      */
     public static int getQuestCompletionPercentage(int questId) {
-        // Implementation would calculate completion percentage based on quest-specific varbits
-        // This is a placeholder
-        return 0;
+        int status = getQuestStatus(questId);
+        
+        if (status == QUEST_COMPLETE) {
+            return 100;
+        } else if (status == QUEST_NOT_STARTED) {
+            return 0;
+        }
+        
+        // For started quests, estimate progress based on configs/varbits
+        switch (questId) {
+            case WATERFALL_QUEST_ID:
+                int waterfallStatus = getConfig(65);
+                return (waterfallStatus * 100) / 10;
+            case FIGHT_ARENA_ID:
+                int fightArenaStatus = getConfig(17);
+                return (fightArenaStatus * 100) / 15;
+            case FAIRY_TALE_PT2_ID:
+                int ft2Status = getVarbit(FAIRY_TALE_PT2_VARBIT);
+                return ft2Status;
+            default:
+                return 50; // Default to 50% if started but can't determine
+        }
     }
     
     /**
@@ -120,9 +216,13 @@ public class QuestVarbitManager {
      * @return The number of quest points
      */
     public static int getQuestPoints() {
-        // Implementation would get quest points from the appropriate widget
-        // This is a placeholder
-        return 0;
+        int points = 0;
+        for (Quest quest : Quests.getAll()) {
+            if (quest.isFinished()) {
+                points += quest.getPointsReward();
+            }
+        }
+        return points;
     }
     
     /**
@@ -130,8 +230,24 @@ public class QuestVarbitManager {
      * @return The number of completed quests
      */
     public static int getCompletedQuestsCount() {
-        // Implementation would count completed quests
-        // This is a placeholder
-        return 0;
+        int count = 0;
+        for (Quest quest : Quests.getAll()) {
+            if (quest.isFinished()) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Update the cache if it's been too long since the last update
+     */
+    private static void updateCacheIfNeeded() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCacheUpdate > CACHE_TIMEOUT) {
+            varbitCache.clear();
+            questStatusCache.clear();
+            lastCacheUpdate = currentTime;
+        }
     }
 }

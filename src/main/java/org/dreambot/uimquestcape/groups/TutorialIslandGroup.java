@@ -1,8 +1,9 @@
 package org.dreambot.uimquestcape.groups;
 
-import org.dreambot.api.methods.container.impl.Inventory;
+import org.dreambot.api.methods.interactive.Players;
 import org.dreambot.api.methods.map.Area;
 import org.dreambot.api.methods.map.Tile;
+import org.dreambot.api.methods.settings.PlayerSettings;
 import org.dreambot.api.methods.walking.impl.Walking;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.State;
@@ -30,12 +31,16 @@ public class TutorialIslandGroup extends StateGroup {
     private static final int MAGIC_INSTRUCTOR_STAGE = 80;
     private static final int TUTORIAL_COMPLETE = 1000;
     
+    // Tutorial Island area boundaries
+    private static final Area TUTORIAL_ISLAND_AREA = new Area(3054, 3133, 3156, 3056);
+    
     public TutorialIslandGroup(UIMQuestCape script) {
         super(script, "TutorialIsland");
         registerStates();
     }
     
     private void registerStates() {
+        // Create and add all tutorial island states
         addState(new CreateAccountState(getScript()));
         addState(new GielinorGuideState(getScript()));
         addState(new SurvivalExpertState(getScript()));
@@ -79,6 +84,7 @@ public class TutorialIslandGroup extends StateGroup {
     
     @Override
     public State determineCurrentState() {
+        // Get current progress in tutorial
         int progress = QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT);
         
         // Determine current state based on tutorial progress
@@ -110,8 +116,54 @@ public class TutorialIslandGroup extends StateGroup {
     
     // Method to check if player is on Tutorial Island
     public static boolean isOnTutorialIsland() {
-        Area tutorialIslandArea = new Area(3054, 3133, 3156, 3056);
-        return tutorialIslandArea.contains(Walking.getPlayerLocation()) && 
-               QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) < TUTORIAL_COMPLETE;
+        Tile playerTile = Players.getLocal().getTile();
+        if (playerTile == null) return false;
+        
+        // Check if in Tutorial Island area
+        if (!TUTORIAL_ISLAND_AREA.contains(playerTile)) {
+            return false;
+        }
+        
+        // Check if tutorial is not completed yet
+        int tutorialProgress = QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT);
+        return tutorialProgress < TUTORIAL_COMPLETE;
+    }
+    
+    // Helper methods for specific tutorial island checks
+    
+    public static boolean hasCompletedSurvivalExpert() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= SURVIVAL_EXPERT_STAGE;
+    }
+    
+    public static boolean hasCompletedMasterChef() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= MASTER_CHEF_STAGE;
+    }
+    
+    public static boolean hasCompletedQuestGuide() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= QUEST_GUIDE_STAGE;
+    }
+    
+    public static boolean hasCompletedMiningInstructor() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= MINING_INSTRUCTOR_STAGE;
+    }
+    
+    public static boolean hasCompletedCombatInstructor() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= COMBAT_INSTRUCTOR_STAGE;
+    }
+    
+    public static boolean hasCompletedFinancialAdvisor() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= FINANCIAL_ADVISOR_STAGE;
+    }
+    
+    public static boolean hasCompletedPrayerInstructor() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= PRAYER_INSTRUCTOR_STAGE;
+    }
+    
+    public static boolean hasCompletedMagicInstructor() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= MAGIC_INSTRUCTOR_STAGE;
+    }
+    
+    public static boolean hasTeleportedToLumbridge() {
+        return QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT) >= TUTORIAL_COMPLETE;
     }
 }
