@@ -23,37 +23,37 @@ public class GielinorGuideState extends AbstractState {
             new Tile(3090, 3107, 0),
             new Tile(3097, 3100, 0)
     );
-    
+
     private boolean talkedToGuide = false;
     private boolean selectedUIM = false;
     private boolean openedSettings = false;
-    
+
     public GielinorGuideState(UIMQuestCape script) {
         super(script, "GielinorGuideState");
     }
-    
+
     @Override
     public int execute() {
         int progress = QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT);
-        
+
         // If we've progressed past this stage, mark as complete
         if (progress > GIELINOR_GUIDE_AREA_PROGRESS) {
             complete();
             return 600;
         }
-        
+
         // If we're not at Gielinor Guide area, walk there
         if (!GIELINOR_GUIDE_AREA.contains(Players.getLocal())) {
             Logger.log("Walking to Gielinor Guide");
             Walking.walk(GIELINOR_GUIDE_AREA.getRandomTile());
             return 1000;
         }
-        
+
         // Handle dialogues if active
         if (Dialogues.inDialogue()) {
             return handleDialogue();
         }
-        
+
         // Open settings panel if prompted
         if (!openedSettings && progress == 3) {
             Logger.log("Opening settings tab");
@@ -65,7 +65,7 @@ public class GielinorGuideState extends AbstractState {
                 return 600;
             }
         }
-        
+
         // Talk to Gielinor Guide if we haven't
         if (!talkedToGuide) {
             Logger.log("Talking to Gielinor Guide");
@@ -76,17 +76,18 @@ public class GielinorGuideState extends AbstractState {
                 return 600;
             }
         }
-        
+
         return 600;
     }
-    
+
     private int handleDialogue() {
-        String npcName = Dialogues.getNPCName();
-        
+        // Get dialogue text instead of NPC name
+        String dialogueText = Dialogues.getNPCDialogue();
+
         // Handle Paul dialogue for Ironman mode selection
-        if ("Paul".equals(npcName) && !selectedUIM) {
+        if (isPaulDialogue(dialogueText) && !selectedUIM) {
             String[] options = Dialogues.getOptions();
-            
+
             // Select Ultimate Ironman mode
             if (options != null) {
                 for (int i = 0; i < options.length; i++) {
@@ -99,12 +100,12 @@ public class GielinorGuideState extends AbstractState {
                 }
             }
         }
-        
+
         // Continue dialogue with Gielinor Guide
-        if ("Gielinor Guide".equals(npcName)) {
+        if (isGielinorGuideDialogue(dialogueText)) {
             talkedToGuide = true;
         }
-        
+
         // Continue dialogue
         if (Dialogues.canContinue()) {
             Dialogues.clickContinue();
@@ -114,10 +115,26 @@ public class GielinorGuideState extends AbstractState {
             Dialogues.clickOption(1);
             return 600;
         }
-        
+
         return 600;
     }
-    
+
+    // Helper method to check if this is Paul's dialogue
+    private boolean isPaulDialogue(String dialogueText) {
+        return dialogueText != null &&
+                (dialogueText.contains("Paul") ||
+                        dialogueText.contains("ironman") ||
+                        dialogueText.contains("Ironman"));
+    }
+
+    // Helper method to check if this is Gielinor Guide's dialogue
+    private boolean isGielinorGuideDialogue(String dialogueText) {
+        return dialogueText != null &&
+                (dialogueText.contains("Gielinor Guide") ||
+                        dialogueText.contains("tutorial island") ||
+                        dialogueText.contains("Tutorial Island"));
+    }
+
     @Override
     public boolean canExecute() {
         int progress = QuestVarbitManager.getVarbit(TUTORIAL_PROGRESS_VARBIT);
