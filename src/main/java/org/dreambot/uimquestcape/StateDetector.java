@@ -2,7 +2,10 @@ package org.dreambot.uimquestcape;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.dreambot.api.methods.interactive.Players;
 import org.dreambot.api.methods.map.Area;
+import org.dreambot.api.methods.skills.Skill;
 import org.dreambot.api.methods.skills.Skills;
 import org.dreambot.api.methods.container.impl.Inventory;
 import org.dreambot.api.methods.interactive.NPCs;
@@ -61,17 +64,17 @@ public class StateDetector {
     private void updateGameStateCache() {
         // Cache commonly checked game state info to avoid repeated API calls
         gameStateCache.put("tutorialProgress", QuestVarbitManager.getVarbit(QuestVarbitManager.TUTORIAL_PROGRESS_VARBIT));
-        gameStateCache.put("playerLocation", Walking.getPlayerLocation());
+        gameStateCache.put("playerLocation", Players.getLocal().getTile());
         gameStateCache.put("combatLevel", getCombatLevel());
         gameStateCache.put("questPoints", QuestVarbitManager.getQuestPoints());
         gameStateCache.put("inventoryItems", Inventory.all());
         
         // Update key skill levels
         Map<String, Integer> skillLevels = new HashMap<>();
-        skillLevels.put("attack", Skills.getRealLevel(Skills.ATTACK));
-        skillLevels.put("strength", Skills.getRealLevel(Skills.STRENGTH));
-        skillLevels.put("magic", Skills.getRealLevel(Skills.MAGIC));
-        skillLevels.put("firemaking", Skills.getRealLevel(Skills.FIREMAKING));
+        skillLevels.put("attack", Skills.getRealLevel(Skill.forId(0)));
+        skillLevels.put("strength", Skills.getRealLevel(Skill.forId(1))); // Strength is skill ID 1
+        skillLevels.put("magic", Skills.getRealLevel(Skill.forId(6))); // Magic is skill ID 6
+        skillLevels.put("firemaking", Skills.getRealLevel(Skill.forId(11))); // Firemaking is skill ID 11
         gameStateCache.put("skillLevels", skillLevels);
         
         // Cache commonly checked quest statuses

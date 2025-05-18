@@ -48,19 +48,16 @@ public class VorkathBossState extends BossState {
     protected void setupForBossFight() {
         // Ensure anti-dragon shield is equipped
         // This would check equipment and equip if needed
-        
+
         // Enable protect from magic
         if (!Prayers.isActive(Prayer.PROTECT_FROM_MAGIC)) {
-            Prayers.toggle(Prayer.PROTECT_FROM_MAGIC, true);
+            Prayers.toggle(true, Prayer.PROTECT_FROM_MAGIC);
         }
-        
-        // Enable ranged boost prayer if we have enough prayer points
-        if (Prayers.getPoints() > 40) {
-            if (Prayers.canUse(Prayer.RIGOUR)) {
-                Prayers.toggle(Prayer.RIGOUR, true);
-            } else if (Prayers.canUse(Prayer.EAGLE_EYE)) {
-                Prayers.toggle(Prayer.EAGLE_EYE, true);
-            }
+
+        if (Prayers.toggle(true, Prayer.RIGOUR)) {
+            // Successfully activated
+        } else if (Prayers.toggle(true, Prayer.EAGLE_EYE)) {
+            // Successfully activated Eagle Eye instead
         }
     }
     
@@ -104,7 +101,8 @@ public class VorkathBossState extends BossState {
         
         // Check for zombie spawn phase
         NPC zombieSpawn = NPCs.closest(ZOMBIE_SPAWN_ID);
-        if (zombieSpawn != null || Players.getLocal().isStunned()) {
+        int STUN_ANIMATION = 3170; // You'll need to find the correct animation ID
+        if (zombieSpawn != null || Players.getLocal().getAnimation() == STUN_ANIMATION) {
             advancePhase(); // Move to special attack phase
             return 600;
         }
@@ -142,7 +140,7 @@ public class VorkathBossState extends BossState {
         // Switch between Protect from Magic and Protect from Ranged
         // For simplicity, we'll just use Protect from Magic
         if (!Prayers.isActive(Prayer.PROTECT_FROM_MAGIC)) {
-            Prayers.toggle(Prayer.PROTECT_FROM_MAGIC, true);
+            Prayers.toggle(true,Prayer.PROTECT_FROM_MAGIC);
         }
         
         // Attack Vorkath if not already attacking
@@ -159,7 +157,8 @@ public class VorkathBossState extends BossState {
     protected int handleSpecialAttackPhase() {
         // Handle either zombie spawn or acid pool phase
         NPC zombieSpawn = NPCs.closest(ZOMBIE_SPAWN_ID);
-        if (zombieSpawn != null || Players.getLocal().isStunned()) {
+        int STUN_ANIMATION = 3170; // You'll need to find the correct animation ID
+        if (zombieSpawn != null || Players.getLocal().getAnimation() == STUN_ANIMATION) {
             return handleZombieSpawnPhase(zombieSpawn);
         } else if (isAcidPoolPhase()) {
             return handleAcidPoolPhase();
@@ -184,9 +183,9 @@ public class VorkathBossState extends BossState {
     
     private int handleZombieSpawnPhase(NPC zombieSpawn) {
         // If player is stunned, wait for it to end
-        if (Players.getLocal().isStunned()) {
-            Logger.log("Player stunned, waiting");
-            return 600;
+        int STUN_ANIMATION_ID = 7060; // This is a placeholder, find the correct ID
+        if (Players.getLocal().getAnimation() == STUN_ANIMATION_ID) {
+            // Code handling stunned state
         }
         
         // Cast Crumble Undead on zombie spawn

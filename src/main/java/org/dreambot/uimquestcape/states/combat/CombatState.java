@@ -7,6 +7,7 @@ import org.dreambot.api.utilities.Sleep;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.uimquestcape.AbstractState;
 import org.dreambot.uimquestcape.UIMQuestCape;
+import org.dreambot.api.wrappers.interactive.NPC;
 
 /**
  * Base class for combat-related states that handles common combat logic
@@ -53,7 +54,7 @@ public abstract class CombatState extends AbstractState {
     protected int findAndAttackTarget() {
         // Find target by name or ID depending on what's set
         if (targetName != null && !targetName.isEmpty()) {
-            var target = NPCs.closest(npc -> 
+            NPC target = NPCs.closest(npc ->
                 targetName.equals(npc.getName()) && 
                 !npc.isInCombat() && 
                 npc.getHealthPercent() > 0
@@ -68,7 +69,7 @@ public abstract class CombatState extends AbstractState {
                 Logger.log("Could not find target: " + targetName);
             }
         } else if (targetId > 0) {
-            var target = NPCs.closest(npc -> 
+            NPC target = NPCs.closest(npc ->
                 npc.getID() == targetId && 
                 !npc.isInCombat() && 
                 npc.getHealthPercent() > 0
