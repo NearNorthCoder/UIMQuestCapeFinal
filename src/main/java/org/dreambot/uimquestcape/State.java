@@ -27,6 +27,12 @@ public interface State {
      * @param nextState The next State instance to execute.
      */
     void setNextState(State nextState);
+
+    /**
+     * Gets the next state that should be executed after this one completes.
+     * @return The next State instance to execute.
+     */
+    State getNextState();
     
     /**
      * Checks if this state can execute based on current conditions

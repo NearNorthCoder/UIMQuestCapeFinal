@@ -6,7 +6,7 @@ import org.dreambot.api.methods.map.Area;
 import org.dreambot.api.methods.map.Map;
 import org.dreambot.api.methods.map.Tile;
 import org.dreambot.api.methods.walking.impl.Walking;
-import org.dreambot.api.methods.walking.path.impl.LocalPath;
+import org.dreambot.api.methods.walking.path.Path;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.api.utilities.Sleep;
 import org.dreambot.api.wrappers.interactive.GameObject;
@@ -18,11 +18,11 @@ import org.dreambot.uimquestcape.UIMQuestCape;
 public class NavigationHelper {
     private final UIMQuestCape script;
     private static final int MAX_WALKING_WAIT_TIME = 15000; // 15 seconds
-    
+
     public NavigationHelper(UIMQuestCape script) {
         this.script = script;
     }
-    
+
     /**
      * Walks to a specific tile
      * @param tile The destination tile
@@ -33,12 +33,12 @@ public class NavigationHelper {
             Logger.error("Cannot walk to null tile");
             return false;
         }
-        
+
         // If we're already at the destination
         if (Players.getLocal().getTile().distance(tile) < 3) {
             return true;
         }
-        
+
         // Check if we can reach the tile directly
         if (Map.canReach(tile)) {
             // Walk to destination
@@ -50,7 +50,7 @@ public class NavigationHelper {
             return Walking.walkExact(tile);
         }
     }
-    
+
     /**
      * Walks to an area
      * @param area The destination area
@@ -61,16 +61,16 @@ public class NavigationHelper {
             Logger.error("Cannot walk to null area");
             return false;
         }
-        
+
         // If we're already in the area
         if (area.contains(Players.getLocal().getTile())) {
             return true;
         }
-        
+
         // Walk to random tile in area
         Logger.log("Walking to area");
         Tile destination = area.getRandomTile();
-        
+
         // Check if we can reach the tile directly
         if (Map.canReach(destination)) {
             return Walking.walk(destination);
@@ -79,7 +79,7 @@ public class NavigationHelper {
             return Walking.walkExact(destination);
         }
     }
-    
+
     /**
      * Walks to a specific tile and waits until reached
      * @param tile The destination tile
@@ -90,37 +90,37 @@ public class NavigationHelper {
         if (Players.getLocal().getTile().distance(tile) < 3) {
             return true; // Already at destination
         }
-        
+
         if (walkTo(tile)) {
             Logger.log("Walking to tile and waiting: " + tile.getX() + ", " + tile.getY());
-            
+
             // Wait for arrival with timeout
             long startTime = System.currentTimeMillis();
             while (System.currentTimeMillis() - startTime < timeout) {
                 if (Players.getLocal().getTile().distance(tile) < 3) {
                     return true; // Reached destination
                 }
-                
+
                 if (Players.getLocal().isMoving()) {
                     // Reset timeout if we're moving
                     startTime = System.currentTimeMillis();
                 }
-                
+
                 // If stuck, try again
-                if (!Players.getLocal().isMoving() && 
-                    System.currentTimeMillis() - startTime > 3000) {
+                if (!Players.getLocal().isMoving() &&
+                        System.currentTimeMillis() - startTime > 3000) {
                     walkTo(tile);
                 }
-                
+
                 Sleep.sleep(300, 600);
             }
-            
+
             return Players.getLocal().getTile().distance(tile) < 3;
         }
-        
+
         return false;
     }
-    
+
     /**
      * Walks to a destination using web walking (more reliable for long distances)
      * @param destination The destination tile
@@ -130,7 +130,7 @@ public class NavigationHelper {
         Logger.log("Web walking to: " + destination.getX() + ", " + destination.getY());
         return Walking.walkExact(destination);
     }
-    
+
     /**
      * Checks if we can reach a tile
      * @param tile The tile to check
@@ -139,7 +139,7 @@ public class NavigationHelper {
     public boolean canReach(Tile tile) {
         return Map.canReach(tile);
     }
-    
+
     /**
      * Navigate through obstacles such as doors, gates, etc.
      * @param obstacle The name of the obstacle
@@ -148,35 +148,35 @@ public class NavigationHelper {
      */
     public boolean navigateObstacle(String obstacle, String action) {
         GameObject gameObject = GameObjects.closest(obstacle);
-        
+
         if (gameObject == null) {
             Logger.error("Could not find obstacle: " + obstacle);
             return false;
         }
-        
+
         if (gameObject.distance() > 5) {
             walkTo(gameObject.getTile());
             Sleep.sleepUntil(() -> gameObject.distance() <= 5, 5000);
         }
-        
+
         if (gameObject.hasAction(action)) {
             Logger.log("Interacting with " + obstacle + " using action: " + action);
-            
+
             boolean result = gameObject.interact(action);
             Sleep.sleep(600, 1200);
-            
+
             // Doors take an extra moment to open
             if (action.contains("Open")) {
                 Sleep.sleep(1200, 1800);
             }
-            
+
             return result;
         } else {
             Logger.error("Obstacle does not have action: " + action);
             return false;
         }
     }
-    
+
     /**
      * Navigate along a path of tiles
      * @param path Array of tiles forming a path
@@ -186,15 +186,24 @@ public class NavigationHelper {
         if (path == null || path.length == 0) {
             return false;
         }
-        
-        // Create a local path
-        LocalPath localPath = new LocalPath(path);
-        
-        // Follow the path
-        Logger.log("Following path of " + path.length + " tiles");
-        return localPath.traverse() && Sleep.sleepUntil(
-            () -> Players.getLocal().getTile().distance(path[path.length - 1]) < 3, 
-            MAX_WALKING_WAIT_TIME
-        );
+
+        // Use the final tile in the path as our destination
+        Tile destination = path[path.length - 1];
+
+        Logger.log("Following path of " + path.length + " tiles to destination: " + destination);
+
+        // Generate a path to the destination
+        Path generatedPath = Walking.generatePath(destination);
+
+        if (generatedPath != null) {
+            generatedPath.traverse();
+            return Sleep.sleepUntil(
+                    () -> Players.getLocal().getTile().distance(destination) < 3,
+                    MAX_WALKING_WAIT_TIME
+            );
+        }
+
+        // If path generation fails, fall back to direct walking
+        return Walking.walk(destination);
     }
 }

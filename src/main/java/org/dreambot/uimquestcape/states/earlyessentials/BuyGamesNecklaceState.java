@@ -6,18 +6,23 @@ import org.dreambot.api.methods.map.Area;
 import org.dreambot.api.methods.walking.impl.Walking;
 import org.dreambot.api.utilities.Logger;
 import org.dreambot.api.utilities.Sleep;
-import org.dreambot.uimquestcape.State;
+import org.dreambot.uimquestcape.AbstractState;
+import org.dreambot.uimquestcape.UIMQuestCape;
 
-public class BuyGamesNecklaceState implements State {
-    private State nextState;
+public class BuyGamesNecklaceState extends AbstractState {
     private final Area GRAND_EXCHANGE_AREA = new Area(3160, 3487, 3168, 3495);
 
+    public BuyGamesNecklaceState(UIMQuestCape script) {
+        super(script, "BuyGamesNecklaceState");
+    }
+
     @Override
-    public boolean execute() {
+    public int execute() {
         // Check if player has games necklace already
         if (hasGamesNecklace()) {
             Logger.log("Already have Games Necklace, moving to next state");
-            return true;
+            complete();
+            return 600;
         }
 
         // Walk to Grand Exchange
@@ -25,7 +30,7 @@ public class BuyGamesNecklaceState implements State {
             Logger.log("Walking to Grand Exchange");
             Walking.walk(GRAND_EXCHANGE_AREA.getRandomTile());
             Sleep.sleepUntil(() -> GRAND_EXCHANGE_AREA.contains(Players.getLocal()), 5000);
-            return false;
+            return 1000;
         }
 
         // Attempt to buy from player shops
@@ -37,7 +42,8 @@ public class BuyGamesNecklaceState implements State {
         // This would involve finding players selling games necklaces and initiating trade
 
         Logger.log("Purchased Games Necklace from player shop");
-        return true;
+        complete();
+        return 600;
     }
 
     private boolean hasGamesNecklace() {
@@ -49,17 +55,7 @@ public class BuyGamesNecklaceState implements State {
     }
 
     @Override
-    public String status() {
-        return "Buying Games Necklace from player shop";
-    }
-
-    @Override
-    public State getNextState() {
-        return nextState;
-    }
-
-    @Override
-    public void setNextState(State nextState) {
-        this.nextState = nextState;
+    public boolean canExecute() {
+        return !hasGamesNecklace();
     }
 }

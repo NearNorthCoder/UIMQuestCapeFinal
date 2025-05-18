@@ -46,22 +46,22 @@ public class UIMQuestCape extends AbstractScript {
         }
 
         // Log current state for debugging
-        Logger.log("Current state: " + currentState.status());
+        Logger.log("Current state: " + currentState.getName());  // Change status() to getName()
 
-        // Execute the current state
-        boolean completed = currentState.execute();
+        // Execute the current state and get the sleep time
+        int sleepTime = currentState.execute();  // Store as int, not boolean
 
         // If the state has completed its task, move to the next state
-        if (completed && currentState.getNextState() != null) {
-            Logger.log("State completed, moving to next state: " + currentState.getNextState().status());
+        if (currentState.isCompleted() && currentState.getNextState() != null) {
+            Logger.log("State completed, moving to next state: " + currentState.getNextState().getName());  // Change status() to getName()
             currentState = currentState.getNextState();
-        } else if (completed) {
+        } else if (currentState.isCompleted()) {
             Logger.log("State completed but no next state defined. Defaulting to idle.");
             currentState = new IdleState();
         }
 
         // Sleep between loops
-        return 600; // Sleep for 600ms
+        return sleepTime;  // Return the sleep time from execute()
     }
 
     /**
@@ -69,17 +69,14 @@ public class UIMQuestCape extends AbstractScript {
      * This checks completed quests, inventory items, skills, and location.
      */
     private void determineInitialState() {
-        // For now, we'll always start with the early game progression
-        // In the future, we can determine where in the sequence we should start
-        // based on completed quests, skills, etc.
-
+        // For testing, we'll start with the early game essentials
         Logger.log("Determining initial state based on account progress");
 
-        // For testing, we'll start with the early game essentials
-        EarlyGameEssentialsGroup earlyGameGroup = new EarlyGameEssentialsGroup();
-        currentState = earlyGameGroup.getStartingState();
+        // Pass "this" as the argument to the constructor
+        EarlyGameEssentialsGroup earlyGameGroup = new EarlyGameEssentialsGroup(this);
+        currentState = earlyGameGroup.getInitialState();
 
-        Logger.log("Initial state set to: " + currentState.status());
+        Logger.log("Initial state set to: " + currentState.getName());
     }
 
     @Override

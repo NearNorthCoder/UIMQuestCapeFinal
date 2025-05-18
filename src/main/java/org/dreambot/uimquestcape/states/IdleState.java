@@ -11,14 +11,14 @@ import org.dreambot.uimquestcape.AbstractState;
 public class IdleState extends AbstractState {
 
     @Override
-    public boolean execute() {
+    public int execute() {
         Logger.log("Idle state - waiting for next action");
         Sleep.sleep(2000, 3000); // Sleep for 2-3 seconds
         return false; // Always return false to stay in this state until manually changed
     }
 
     @Override
-    public String status() {
+    public String getName() {
         return "Idle - waiting for instructions";
     }
 }
