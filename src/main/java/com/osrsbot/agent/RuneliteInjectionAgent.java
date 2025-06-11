@@ -48,6 +48,25 @@ public class RuneliteInjectionAgent {
                 DebugManager.logInfo("RuneLite main class loaded! Injection successful.");
                 // Initialize API (eager singleton instantiation ensures module setup/logging)
                 ApiManager.get();
+
+                // Attempt to locate and cache the Client instance for hooks
+                try {
+                    // net.runelite.client.RuneLite holds a static field "client" of type net.runelite.api.Client
+                    ClassLoader cl = loader;
+                    Class<?> runeLiteClass = cl.loadClass("net.runelite.client.RuneLite");
+                    java.lang.reflect.Field clientField = runeLiteClass.getDeclaredField("client");
+                    clientField.setAccessible(true);
+
+                    Object clientInstance = clientField.get(null);
+                    if (clientInstance != null) {
+                        com.osrsbot.hooks.ClientReflection.setClientInstance(clientInstance);
+                        DebugManager.logInfo("Cached RuneLite Client instance for API hooks.");
+                    } else {
+                        DebugManager.logWarn("Could not find RuneLite Client instance (null).");
+                    }
+                } catch (Exception e) {
+                    DebugManager.logException(e);
+                }
             }
 
             // Return null to keep class as-is unless you want to modify the bytecode.
