@@ -1,0 +1,59 @@
+package com.osrsbot.debug;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Centralized debug and logging manager.
+ * Supports log levels, event tracing, error reporting, and runtime hooks.
+ */
+public class DebugManager {
+    public enum Level { DEBUG, INFO, WARN, ERROR }
+
+    private static Level currentLevel = Level.DEBUG;
+    private static boolean traceApiCalls = true;
+
+    public static void setLevel(Level level) {
+        currentLevel = level;
+    }
+
+    public static void enableApiCallTracing(boolean enable) {
+        traceApiCalls = enable;
+    }
+
+    public static void logDebug(String msg) {
+        log(Level.DEBUG, msg);
+    }
+
+    public static void logInfo(String msg) {
+        log(Level.INFO, msg);
+    }
+
+    public static void logWarn(String msg) {
+        log(Level.WARN, msg);
+    }
+
+    public static void logError(String msg) {
+        log(Level.ERROR, msg);
+    }
+
+    public static void logApiCall(String call) {
+        if (traceApiCalls) {
+            log(Level.DEBUG, "[API] " + call);
+        }
+    }
+
+    public static void logException(Throwable t) {
+        log(Level.ERROR, "Exception: " + t.getClass().getSimpleName() + " - " + t.getMessage());
+        for (StackTraceElement e : t.getStackTrace()) {
+            System.err.println("\tat " + e);
+        }
+    }
+
+    private static void log(Level level, String msg) {
+        if (level.ordinal() >= currentLevel.ordinal()) {
+            String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            System.out.println("[" + time + "] [" + level + "] " + msg);
+        }
+    }
+}
