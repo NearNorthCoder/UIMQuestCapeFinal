@@ -1,22 +1,17 @@
-<properties>
-  <maven.compiler.target>1.8</maven.compiler.target>
-  <maven.compiler.source>1.8</maven.compiler.source>
-  <dreambot.path>${user.home}/DreamBot/</dreambot.path>
-</properties>
-
-<repositories>
-<repository>
-  <id>dreambot</id>
-  <name>dreambot</name>
-  <url>https://downloads.dreambot.org/maven/</url>
-</repository>
-</repositories>
-
-<dependencies>
-<dependency>
-  <groupId>org.dreambot</groupId>
-  <artifactId>client</artifactId>
-  <version>3.0.0</version>
-  <scope>provided</scope>
-</dependency>
-</dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.osrsbot</groupId>
+    <artifactId>osrsbot-client</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>OSRS Botting Client</name>
+    <description>OSRS botting client with antiban and detection protection (Java, injection method)</description>
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+    <dependencies>
+        <!-- TODO: Add dependencies for injection, bytecode manipulation, etc. (e.g., ASM, Javassist) -->
+    </dependencies>
+</project>
