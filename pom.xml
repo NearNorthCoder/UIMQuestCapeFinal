@@ -3,15 +3,42 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.osrsbot</groupId>
-    <artifactId>osrsbot-client</artifactId>
+    <artifactId>osrsbot-agent</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>OSRS Botting Client</name>
-    <description>OSRS botting client with antiban and detection protection (Java, injection method)</description>
+    <name>OSRS Botting Agent</name>
+    <description>Java agent that injects into RuneLite for OSRS botting using the injection method</description>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
-    <dependencies>
-        <!-- TODO: Add dependencies for injection, bytecode manipulation, etc. (e.g., ASM, Javassist) -->
-    </dependencies>
+    <build>
+        <plugins>
+            <!-- Shade plugin to create a fat JAR (optional, here for completeness) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <transformers>
+                                <!-- Set the agent manifest -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.osrsbot.agent.RuneliteInjectionAgent</mainClass>
+                                    <manifestEntries>
+                                        <Premain-Class>com.osrsbot.agent.RuneliteInjectionAgent</Premain-Class>
+                                        <Agent-Class>com.osrsbot.agent.RuneliteInjectionAgent</Agent-Class>
+                                        <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                                        <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
