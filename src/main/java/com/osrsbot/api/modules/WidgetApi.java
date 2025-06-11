@@ -8,12 +8,11 @@ import com.osrsbot.debug.DebugManager;
 public class WidgetApi {
     public boolean isWidgetVisible(int widgetId) {
         DebugManager.logApiCall("WidgetApi.isWidgetVisible(" + widgetId + ")");
-        // TODO: Query widget visibility
-        return false;
+        return com.osrsbot.hooks.ClientReflection.isWidgetVisible(widgetId);
     }
 
     public void clickWidget(int widgetId) {
         DebugManager.logApiCall("WidgetApi.clickWidget(" + widgetId + ")");
-        // TODO: Simulate click on widget
+        com.osrsbot.hooks.ClientReflection.clickWidget(widgetId);
     }
 }

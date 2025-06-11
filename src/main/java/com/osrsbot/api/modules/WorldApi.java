@@ -15,12 +15,26 @@ public class WorldApi {
 
     public List<WorldInfo> getWorlds() {
         DebugManager.logApiCall("WorldApi.getWorlds");
-        // TODO: Pull world list from client
-        return List.of();
+        java.util.ArrayList<WorldInfo> result = new java.util.ArrayList<>();
+        Object[] worlds = com.osrsbot.hooks.ClientReflection.getWorlds();
+        if (worlds == null) return result;
+        try {
+            for (Object w : worlds) {
+                java.lang.reflect.Method getId = w.getClass().getMethod("getId");
+                java.lang.reflect.Method getTypes = w.getClass().getMethod("getTypes");
+                int id = ((Number) getId.invoke(w)).intValue();
+                Object typeList = getTypes.invoke(w);
+                String typeStr = (typeList != null) ? typeList.toString() : "";
+                result.add(new WorldInfo(id, typeStr));
+            }
+        } catch (Exception e) {
+            DebugManager.logException(e);
+        }
+        return result;
     }
 
     public void hopWorld(int worldId) {
         DebugManager.logApiCall("WorldApi.hopWorld(" + worldId + ")");
-        // TODO: Simulate world hop
+        com.osrsbot.hooks.ClientReflection.hopToWorld(worldId);
     }
 }

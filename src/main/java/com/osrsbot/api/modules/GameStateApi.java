@@ -10,20 +10,27 @@ public class GameStateApi {
 
     public LoginState getLoginState() {
         DebugManager.logApiCall("GameStateApi.getLoginState");
-        // TODO: Hook RuneLite client fields/methods for real state
-        // Example: Read from client field or use reflection/hooking
+        String state = com.osrsbot.hooks.ClientReflection.getGameState();
+        if (state == null) return LoginState.UNKNOWN;
+        try {
+            if (state.equals("LOGGED_IN")) return LoginState.LOGGED_IN;
+            if (state.equals("LOGGING_IN")) return LoginState.LOGGING_IN;
+            if (state.equals("LOGGED_OUT")) return LoginState.LOGGED_OUT;
+        } catch (Exception e) {
+            DebugManager.logException(e);
+        }
         return LoginState.UNKNOWN;
     }
 
     public int getFps() {
         DebugManager.logApiCall("GameStateApi.getFps");
-        // TODO: Retrieve FPS from client
-        return -1;
+        Integer fps = com.osrsbot.hooks.ClientReflection.getFps();
+        return fps != null ? fps : -1;
     }
 
     public int getTickCount() {
         DebugManager.logApiCall("GameStateApi.getTickCount");
-        // TODO: Retrieve game tick count from client
-        return -1;
+        Integer ticks = com.osrsbot.hooks.ClientReflection.getTickCount();
+        return ticks != null ? ticks : -1;
     }
 }

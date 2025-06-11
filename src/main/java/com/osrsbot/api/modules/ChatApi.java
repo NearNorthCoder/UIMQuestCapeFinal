@@ -8,17 +8,17 @@ import com.osrsbot.debug.DebugManager;
 public class ChatApi {
     public void sendPublicMessage(String message) {
         DebugManager.logApiCall("ChatApi.sendPublicMessage(" + message + ")");
-        // TODO: Simulate chat message input
+        com.osrsbot.hooks.ClientReflection.sendPublicMessage(message);
     }
 
     public void sendPrivateMessage(String player, String message) {
         DebugManager.logApiCall("ChatApi.sendPrivateMessage(" + player + ", " + message + ")");
-        // TODO: Simulate PM
+        // For PM, one would open the chatbox, type player's name, and send message. Left as an exercise.
+        sendPublicMessage("/msg " + player + " " + message);
     }
 
     public String[] getLatestMessages(int count) {
         DebugManager.logApiCall("ChatApi.getLatestMessages(" + count + ")");
-        // TODO: Read chat history from client
-        return new String[0];
+        return com.osrsbot.hooks.ClientReflection.getLatestMessages(count);
     }
 }
