@@ -1,40 +1,43 @@
 package com.osrsbot.gui;
 
+import javax.swing.*;
+import java.awt.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 /**
- * Placeholder for a GUI overlay manager.
- * In a real implementation, this would use RuneLite's overlay system or AWT/Swing to display in-client info.
+ * Real in-game (Swing) overlay for displaying bot info, notifications, and recent events.
  */
 public class OverlayManager {
     private static String lastChat = "";
-    private static java.util.List<String> inventorySnapshot = java.util.Collections.emptyList();
+    private static List<String> inventorySnapshot = Collections.emptyList();
     private static String lastCriticalError = null;
-    private static final java.util.LinkedList<String> recentEvents = new java.util.LinkedList<>();
+    private static final LinkedList<String> recentEvents = new LinkedList<>();
     private static final int MAX_EVENTS = 5;
     private static String notification = null;
     private static long notificationUntil = 0;
 
-    // --- Swing Overlay ---
-    private static javax.swing.JFrame overlayFrame = null;
-    private static javax.swing.JTextArea overlayText = null;
+    // Swing Overlay
+    private static JFrame overlayFrame = null;
+    private static JTextArea overlayText = null;
     private static volatile String lastOverlayContent = "";
 
     static {
-        try {
-            javax.swing.SwingUtilities.invokeLater(OverlayManager::initOverlayWindow);
-        } catch (Exception ignored) {}
+        SwingUtilities.invokeLater(OverlayManager::initOverlayWindow);
     }
 
     private static void initOverlayWindow() {
-        overlayFrame = new javax.swing.JFrame("OSRSBot Overlay");
-        overlayFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
+        overlayFrame = new JFrame("OSRSBot Overlay");
+        overlayFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         overlayFrame.setAlwaysOnTop(true);
         overlayFrame.setSize(400, 300);
         overlayFrame.setLocationRelativeTo(null);
         overlayFrame.setResizable(true);
-        overlayText = new javax.swing.JTextArea();
+        overlayText = new JTextArea();
         overlayText.setEditable(false);
-        overlayText.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
-        overlayFrame.getContentPane().add(new javax.swing.JScrollPane(overlayText));
+        overlayText.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        overlayFrame.getContentPane().add(new JScrollPane(overlayText));
         overlayFrame.setVisible(true);
     }
 
@@ -47,7 +50,7 @@ public class OverlayManager {
     private static void updateOverlayWindow(String info) {
         lastOverlayContent = info;
         if (overlayText != null) {
-            javax.swing.SwingUtilities.invokeLater(() -> overlayText.setText(info));
+            SwingUtilities.invokeLater(() -> overlayText.setText(info));
         }
     }
 
@@ -55,8 +58,25 @@ public class OverlayManager {
         lastChat = chat;
     }
 
-    public static void setInventorySnapshot(java.util.List<String> inv) {
+    public static void setInventorySnapshot(List<String> inv) {
         inventorySnapshot = inv;
+    }
+
+    public static void setLastCriticalError(String err) {
+        lastCriticalError = err;
+    }
+
+    public static void pushEvent(String event) {
+        if (recentEvents.size() == MAX_EVENTS) recentEvents.removeFirst();
+        recentEvents.addLast(event);
+    }
+
+    /**
+     * Show a notification message in the overlay for a few seconds.
+     */
+    public static void notify(String msg) {
+        notification = msg;
+        notificationUntil = System.currentTimeMillis() + 5000;
     }
 
     public static void updateOverlay() {
@@ -69,9 +89,9 @@ public class OverlayManager {
         boolean any = false;
         for (var script : scripts) {
             sb.append(script.getName())
-                    .append('[')
-                    .append(com.osrsbot.scripts.ScriptManager.getScriptState(script))
-                    .append("] ");
+                .append('[')
+                .append(com.osrsbot.scripts.ScriptManager.getScriptState(script))
+                .append("] ");
             any = true;
         }
         if (!any) sb.append("(none) ");
@@ -95,3 +115,4 @@ public class OverlayManager {
         }
         showInfo(sb.toString());
     }
+}
