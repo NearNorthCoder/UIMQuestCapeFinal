@@ -23,11 +23,14 @@ public class OverlayManager {
 
     public static void updateOverlay() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Active Scripts: ");
+        sb.append("Scripts: ");
         var scripts = com.osrsbot.scripts.ScriptManager.getScripts();
         boolean any = false;
         for (var script : scripts) {
-            sb.append(script.getName()).append(" ");
+            sb.append(script.getName())
+                    .append('[')
+                    .append(com.osrsbot.scripts.ScriptManager.getScriptState(script))
+                    .append("] ");
             any = true;
         }
         if (!any) sb.append("(none) ");

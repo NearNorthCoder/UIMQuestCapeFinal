@@ -14,8 +14,13 @@ import java.net.URLClassLoader;
 /**
  * Manages loading, starting, and stopping of scripts.
  */
+/**
+ * Manages loading, starting, stopping, and restarting of scripts.
+ * Tracks script states and allows for robust lifecycle management.
+ */
 public class ScriptManager {
     private static final List<Script> scripts = new ArrayList<>();
+    private static final java.util.Map<Script, ScriptState> scriptStates = new java.util.HashMap<>();
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     public static void register(Script script) {
