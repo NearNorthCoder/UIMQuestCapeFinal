@@ -66,10 +66,16 @@ public class RuneliteInjectionAgent {
                         com.osrsbot.modules.ModuleManager.register(new com.osrsbot.antiban.AntibanManager());
                         com.osrsbot.modules.ModuleManager.startAll();
 
+                        // Dynamic script loading
+                        com.osrsbot.scripts.ScriptManager.loadScriptsFromDirectory();
+
                         // Register and start example script(s)
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoChatterScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoWalkerScript());
                         com.osrsbot.scripts.ScriptManager.startAll();
+
+                        // Start the command console in a new thread for live control
+                        new Thread(new com.osrsbot.console.CommandConsole(), "CommandConsole").start();
                     } else {
                         DebugManager.logWarn("Could not find RuneLite Client instance (null).");
                     }
