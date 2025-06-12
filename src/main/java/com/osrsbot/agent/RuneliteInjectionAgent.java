@@ -86,6 +86,7 @@ public class RuneliteInjectionAgent {
                         new Thread(() -> {
                             String lastChat = "";
                             java.util.List<String> lastInventory = java.util.Collections.emptyList();
+                            java.util.Map<String, Integer> lastXp = new java.util.HashMap<>();
                             while (true) {
                                 try {
                                     com.osrsbot.events.EventBus.publish(
@@ -97,7 +98,7 @@ public class RuneliteInjectionAgent {
                                     String[] messages = com.osrsbot.api.ApiManager.get().chat.getLatestMessages(1);
                                     if (messages.length > 0 && !messages[0].equals(lastChat)) {
                                         lastChat = messages[0];
-                                        // For demo, type is "PUBLIC", sender is unknown (would require deeper hook)
+                                        com.osrsbot.gui.OverlayManager.setLastChat(lastChat);
                                         com.osrsbot.events.EventBus.publish(
                                             new com.osrsbot.events.events.ChatMessageEvent("unknown", lastChat, "PUBLIC")
                                         );
@@ -109,10 +110,32 @@ public class RuneliteInjectionAgent {
                                     for (var i : items) names.add(i.name);
                                     if (!names.equals(lastInventory)) {
                                         lastInventory = names;
+                                        com.osrsbot.gui.OverlayManager.setInventorySnapshot(names);
                                         com.osrsbot.events.EventBus.publish(
                                             new com.osrsbot.events.events.InventoryChangedEvent(names)
                                         );
                                     }
+
+                                    // --- XP change event detection (polls all skills) ---
+                                    // Try to get skills and their XP from the client via reflection
+                                    try {
+                                        Object client = com.osrsbot.hooks.ClientReflection.getClient();
+                                        if (client != null) {
+                                            java.lang.reflect.Method getSkillExperience = client.getClass().getMethod("getSkillExperience", 
+                                                client.getClass().getClassLoader().loadClass("net.runelite.api.Skill"));
+                                            Class<?> skillEnum = client.getClass().getClassLoader().loadClass("net.runelite.api.Skill");
+                                            for (Object skill : skillEnum.getEnumConstants()) {
+                                                String skillName = skill.toString();
+                                                int xp = ((Number) getSkillExperience.invoke(client, skill)).intValue();
+                                                if (!lastXp.containsKey(skillName) || lastXp.get(skillName) != xp) {
+                                                    lastXp.put(skillName, xp);
+                                                    com.osrsbot.events.EventBus.publish(
+                                                        new com.osrsbot.events.events.XpChangedEvent(skillName, xp)
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    } catch (Exception ignored) {}
 
                                     Thread.sleep(600); // OSRS game tick ~600ms
                                 } catch (InterruptedException e) {
