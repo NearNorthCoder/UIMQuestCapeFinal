@@ -73,6 +73,7 @@ public class RuneliteInjectionAgent {
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoChatterScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoWalkerScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.ChatLoggerScript());
+                        com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.NpcNotifierScript());
 
                         // Dynamically load scripts from "scripts/" directory if present
                         com.osrsbot.scripts.ScriptManager.loadScriptsFromDirectory("scripts");

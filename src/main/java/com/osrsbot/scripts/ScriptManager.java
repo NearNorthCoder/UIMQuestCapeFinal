@@ -69,11 +69,34 @@ public class ScriptManager {
     public static void start(Script script) {
         try {
             script.onStart();
-            executor.submit(script);
+            // Track state as RUNNING
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.RUNNING);
+            }
+            executor.submit(() -> {
+                try {
+                    script.run();
+                    if (scriptStates != null) {
+                        scriptStates.put(script, ScriptState.STOPPED);
+                    }
+                } catch (Exception e) {
+                    DebugManager.logException(e);
+                    if (scriptStates != null) {
+                        scriptStates.put(script, ScriptState.ERROR);
+                    }
+                    com.osrsbot.gui.OverlayManager.showInfo("[Script ERROR] " + script.getName() + ": " + e.getMessage());
+                    com.osrsbot.gui.OverlayManager.notify("[Script ERROR] " + script.getName());
+                }
+            });
             // Publish event
             com.osrsbot.events.EventBus.publish(new com.osrsbot.events.events.ScriptStartedEvent(script));
         } catch (Exception e) {
             DebugManager.logException(e);
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.ERROR);
+            }
+            com.osrsbot.gui.OverlayManager.showInfo("[Script ERROR] " + script.getName() + ": " + e.getMessage());
+            com.osrsbot.gui.OverlayManager.notify("[Script ERROR] " + script.getName());
         }
     }
 
