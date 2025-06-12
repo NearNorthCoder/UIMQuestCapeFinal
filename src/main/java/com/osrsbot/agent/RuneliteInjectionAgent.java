@@ -61,6 +61,10 @@ public class RuneliteInjectionAgent {
                     if (clientInstance != null) {
                         com.osrsbot.hooks.ClientReflection.setClientInstance(clientInstance);
                         DebugManager.logInfo("Cached RuneLite Client instance for API hooks.");
+
+                        // Register modules/plugins
+                        com.osrsbot.modules.ModuleManager.register(new com.osrsbot.antiban.AntibanManager());
+                        com.osrsbot.modules.ModuleManager.startAll();
                     } else {
                         DebugManager.logWarn("Could not find RuneLite Client instance (null).");
                     }
