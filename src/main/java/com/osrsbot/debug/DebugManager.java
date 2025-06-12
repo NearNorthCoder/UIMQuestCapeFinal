@@ -13,11 +13,29 @@ public class DebugManager {
     private static Level currentLevel = Level.DEBUG;
     private static boolean traceApiCalls = true;
     private static PrintWriter fileLogger = null;
+    private static volatile String lastCriticalError = null;
 
     static {
         try {
             fileLogger = new PrintWriter(new FileWriter("osrsbot.log", true), true);
         } catch (Exception ignored) {}
+    }
+
+    public static void surfaceCriticalError(String msg) {
+        lastCriticalError = msg;
+        System.err.println("[FATAL] " + msg);
+        com.osrsbot.gui.OverlayManager.showInfo("[FATAL] " + msg);
+    }
+
+    public static String getLastCriticalError() {
+        return lastCriticalError;
+    }
+
+    public static void shutdown() {
+        if (fileLogger != null) {
+            fileLogger.flush();
+            fileLogger.close();
+        }
     }
 
     public static void setLevel(Level level) {

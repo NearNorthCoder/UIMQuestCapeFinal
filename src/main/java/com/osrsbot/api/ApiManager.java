@@ -6,6 +6,8 @@ import com.osrsbot.debug.DebugManager;
 /**
  * Singleton entrypoint for all bot API access.
  * Provides sub-APIs for game state, player, inventory, input, world, widgets, chat, etc.
+ *
+ * Usage: ApiManager.get().player.getName();
  */
 public class ApiManager {
     private static final ApiManager INSTANCE = new ApiManager();
@@ -29,6 +31,9 @@ public class ApiManager {
         this.chat = new ChatApi();
     }
 
+    /**
+     * Retrieve the singleton instance of ApiManager.
+     */
     public static ApiManager get() {
         return INSTANCE;
     }

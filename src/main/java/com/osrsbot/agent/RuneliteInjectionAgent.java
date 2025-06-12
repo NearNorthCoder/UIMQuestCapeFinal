@@ -83,7 +83,7 @@ public class RuneliteInjectionAgent {
                         new Thread(new com.osrsbot.console.CommandConsole(), "CommandConsole").start();
 
                         // Start game tick polling and overlay updates
-                        new Thread(() -> {
+                        Thread tickOverlayThread = new Thread(() -> {
                             String lastChat = "";
                             java.util.List<String> lastInventory = java.util.Collections.emptyList();
                             java.util.Map<String, Integer> lastXp = new java.util.HashMap<>();
@@ -142,9 +142,35 @@ public class RuneliteInjectionAgent {
                                     break;
                                 } catch (Exception ex) {
                                     com.osrsbot.debug.DebugManager.logException(ex);
+                                    com.osrsbot.debug.DebugManager.surfaceCriticalError("Fatal tick/overlay error: " + ex.getMessage());
                                 }
                             }
-                        }, "TickAndOverlayLoop").start();
+                        }, "TickAndOverlayLoop");
+                        tickOverlayThread.start();
+
+                        // JVM shutdown hook for resource/thread cleanup
+                        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                            com.osrsbot.scripts.ScriptManager.stopAll();
+                            com.osrsbot.modules.ModuleManager.stopAll();
+                            com.osrsbot.debug.DebugManager.shutdown();
+                            tickOverlayThread.interrupt();
+                            com.osrsbot.debug.DebugManager.logInfo("Shutdown completed.");
+                        }, "BotShutdownHook"));
+
+                        // Version check for RuneLite (scaffold)
+                        try {
+                            Object client = com.osrsbot.hooks.ClientReflection.getClient();
+                            if (client != null) {
+                                ClassLoader cl = client.getClass().getClassLoader();
+                                Class<?> versionClass = cl.loadClass("net.runelite.api.Client");
+                                java.lang.Package p = versionClass.getPackage();
+                                String version = (p != null) ? p.getImplementationVersion() : null;
+                                if (version != null && !version.equals("EXPECTED_VERSION")) {
+                                    com.osrsbot.debug.DebugManager.logWarn("RuneLite version mismatch: Detected " + version + ", expected EXPECTED_VERSION");
+                                    com.osrsbot.gui.OverlayManager.showInfo("WARNING: RuneLite version mismatch, update hooks!");
+                                }
+                            }
+                        } catch (Exception ignored) {}
                     } else {
                         DebugManager.logWarn("Could not find RuneLite Client instance (null).");
                     }
