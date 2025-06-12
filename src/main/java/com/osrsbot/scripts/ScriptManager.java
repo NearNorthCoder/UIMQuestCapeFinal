@@ -32,6 +32,10 @@ public class ScriptManager {
      * Dynamically loads all Script classes from the "scripts" directory.
      * Only classes implementing Script and having a no-arg constructor are loaded.
      */
+    /**
+     * Dynamically loads all Script classes from the provided directory.
+     * Only classes implementing Script and having a no-arg constructor are loaded.
+     */
     public static void loadScriptsFromDirectory(String dirPath) {
         File dir = new File(dirPath);
         if (!dir.exists() || !dir.isDirectory()) {
@@ -100,15 +104,29 @@ public class ScriptManager {
         }
     }
 
+    /**
+     * Stop a running script and update its state.
+     */
     public static void stop(Script script) {
         try {
             script.onStop();
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.STOPPED);
+            }
             com.osrsbot.events.EventBus.publish(new com.osrsbot.events.events.ScriptStoppedEvent(script));
         } catch (Exception e) {
             DebugManager.logException(e);
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.ERROR);
+            }
+            com.osrsbot.gui.OverlayManager.showInfo("[Script ERROR] " + script.getName() + ": " + e.getMessage());
+            com.osrsbot.gui.OverlayManager.notify("[Script ERROR] " + script.getName());
         }
     }
 
+    /**
+     * Stop all running scripts and update their states.
+     */
     public static void stopAll() {
         for (Script script : scripts) {
             stop(script);
@@ -116,39 +134,12 @@ public class ScriptManager {
         executor.shutdownNow();
     }
 
+    /**
+     * Get the list of registered scripts.
+     */
     public static List<Script> getScripts() {
         return Collections.unmodifiableList(scripts);
     }
 
-    /**
-     * Dynamically loads and registers scripts from the ./scripts directory (expects .class files).
-     */
-    public static void loadScriptsFromDirectory() {
-        try {
-            java.io.File dir = new java.io.File("./scripts");
-            if (!dir.exists() || !dir.isDirectory()) {
-                DebugManager.logInfo("No scripts directory found for dynamic loading.");
-                return;
-            }
-            java.net.URL url = dir.toURI().toURL();
-            ClassLoader loader = new java.net.URLClassLoader(new java.net.URL[]{url}, ScriptManager.class.getClassLoader());
-
-            for (String file : dir.list()) {
-                if (file.endsWith(".class")) {
-                    String className = file.substring(0, file.length() - 6);
-                    try {
-                        Class<?> clazz = loader.loadClass(className);
-                        if (Script.class.isAssignableFrom(clazz)) {
-                            Script script = (Script) clazz.getDeclaredConstructor().newInstance();
-                            register(script);
-                        }
-                    } catch (Exception e) {
-                        DebugManager.logException(e);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            DebugManager.logException(e);
-        }
-    }
+    // Removed duplicate loader: use loadScriptsFromDirectory(String)
 }
