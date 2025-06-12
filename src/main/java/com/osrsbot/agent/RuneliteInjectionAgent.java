@@ -8,27 +8,17 @@ import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 public class RuneliteInjectionAgent {
-    /**
-     * This method is called before the main method of the target JVM (RuneLite) when using -javaagent.
-     */
     public static void premain(String agentArgs, Instrumentation inst) {
-        DebugManager.logInfo("Agent loaded successfully! Attaching to RuneLite...");
-        inst.addTransformer(new RuneliteClassTransformer(), true);
-        DebugManager.logInfo("ApiManager and DebugManager initialized.");
+        DebugManager.logInfo("OSRSBot agent loaded! Attaching to RuneLite...");
+        inst.addTransformer(new RuneLiteClassTransformer(), true);
     }
 
-    /**
-     * This method is called if the agent is attached to a running JVM.
-     */
     public static void agentmain(String agentArgs, Instrumentation inst) {
-        DebugManager.logInfo("Agent attached at runtime!");
-        inst.addTransformer(new RuneliteClassTransformer(), true);
+        DebugManager.logInfo("OSRSBot agent attached at runtime!");
+        inst.addTransformer(new RuneLiteClassTransformer(), true);
     }
 
-    /**
-     * Transformer that detects when any RuneLite class is loaded and logs it, also triggers API connection.
-     */
-    private static class RuneliteClassTransformer implements ClassFileTransformer {
+    public static class RuneLiteClassTransformer implements ClassFileTransformer {
         @Override
         public byte[] transform(
                 Module module,
@@ -38,15 +28,10 @@ public class RuneliteInjectionAgent {
                 ProtectionDomain protectionDomain,
                 byte[] classfileBuffer) {
 
-            // Log loading of all RuneLite classes for debugging
-            if (className != null && className.startsWith("net/runelite/")) {
-                DebugManager.logDebug("Loaded RuneLite class: " + className.replace('/', '.'));
-            }
-
-            // When RuneLite main class loads, connect the bot API
+            // Only act when the RuneLite main class is loaded
             if ("net/runelite/client/RuneLite".equals(className)) {
                 DebugManager.logInfo("RuneLite main class loaded! Injection successful.");
-                // Initialize API (eager singleton instantiation ensures module setup/logging)
+                // Initialize API and modules/scripts
                 ApiManager.get();
 
                 // Attempt to locate and cache the Client instance for hooks
@@ -66,16 +51,13 @@ public class RuneliteInjectionAgent {
                         com.osrsbot.modules.ModuleManager.register(new com.osrsbot.antiban.AntibanManager());
                         com.osrsbot.modules.ModuleManager.startAll();
 
-                        // Dynamic script loading
-                        com.osrsbot.scripts.ScriptManager.loadScriptsFromDirectory();
-
-                        // Register and start example script(s)
+                        // Register and start example scripts
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoChatterScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoWalkerScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.ChatLoggerScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.NpcNotifierScript());
 
-                        // Dynamically load scripts from "scripts/" directory if present
+                        // Dynamic script loading (corrected: pass directory argument)
                         com.osrsbot.scripts.ScriptManager.loadScriptsFromDirectory("scripts");
 
                         com.osrsbot.scripts.ScriptManager.startAll();
@@ -93,21 +75,21 @@ public class RuneliteInjectionAgent {
                             while (true) {
                                 try {
                                     com.osrsbot.events.EventBus.publish(
-                                        new com.osrsbot.events.events.TickEvent(System.currentTimeMillis())
+                                            new com.osrsbot.events.events.TickEvent(System.currentTimeMillis())
                                     );
                                     com.osrsbot.gui.OverlayManager.updateOverlay();
 
-                                    // --- Chat message event detection ---
+                                    // Chat message event detection
                                     String[] messages = com.osrsbot.api.ApiManager.get().chat.getLatestMessages(1);
                                     if (messages.length > 0 && !messages[0].equals(lastChat)) {
                                         lastChat = messages[0];
                                         com.osrsbot.gui.OverlayManager.setLastChat(lastChat);
                                         com.osrsbot.events.EventBus.publish(
-                                            new com.osrsbot.events.events.ChatMessageEvent("unknown", lastChat, "PUBLIC")
+                                                new com.osrsbot.events.events.ChatMessageEvent("unknown", lastChat, "PUBLIC")
                                         );
                                     }
 
-                                    // --- Inventory change event detection ---
+                                    // Inventory change event detection
                                     var items = com.osrsbot.api.ApiManager.get().inventory.getInventory();
                                     java.util.List<String> names = new java.util.ArrayList<>();
                                     for (var i : items) names.add(i.name);
@@ -115,16 +97,16 @@ public class RuneliteInjectionAgent {
                                         lastInventory = names;
                                         com.osrsbot.gui.OverlayManager.setInventorySnapshot(names);
                                         com.osrsbot.events.EventBus.publish(
-                                            new com.osrsbot.events.events.InventoryChangedEvent(names)
+                                                new com.osrsbot.events.events.InventoryChangedEvent(names)
                                         );
                                     }
 
-                                    // --- XP change event detection (polls all skills) ---
+                                    // XP change event detection (polls all skills)
                                     try {
                                         Object client = com.osrsbot.hooks.ClientReflection.getClient();
                                         if (client != null) {
-                                            java.lang.reflect.Method getSkillExperience = client.getClass().getMethod("getSkillExperience", 
-                                                client.getClass().getClassLoader().loadClass("net.runelite.api.Skill"));
+                                            java.lang.reflect.Method getSkillExperience = client.getClass().getMethod("getSkillExperience",
+                                                    client.getClass().getClassLoader().loadClass("net.runelite.api.Skill"));
                                             Class<?> skillEnum = client.getClass().getClassLoader().loadClass("net.runelite.api.Skill");
                                             for (Object skill : skillEnum.getEnumConstants()) {
                                                 String skillName = skill.toString();
@@ -132,11 +114,11 @@ public class RuneliteInjectionAgent {
                                                 if (!lastXp.containsKey(skillName) || lastXp.get(skillName) != xp) {
                                                     lastXp.put(skillName, xp);
                                                     com.osrsbot.events.EventBus.publish(
-                                                        new com.osrsbot.events.events.XpChangedEvent(skillName, xp)
+                                                            new com.osrsbot.events.events.XpChangedEvent(skillName, xp)
                                                     );
                                                 }
                                             }
-                                            // --- Region change detection ---
+                                            // Region change detection
                                             java.lang.reflect.Method getLocalPlayer = client.getClass().getMethod("getLocalPlayer");
                                             Object player = getLocalPlayer.invoke(client);
                                             if (player != null) {
@@ -148,13 +130,13 @@ public class RuneliteInjectionAgent {
                                                     if (regionId != lastRegionId) {
                                                         lastRegionId = regionId;
                                                         com.osrsbot.events.EventBus.publish(
-                                                            new com.osrsbot.events.events.RegionChangedEvent(regionId)
+                                                                new com.osrsbot.events.events.RegionChangedEvent(regionId)
                                                         );
                                                     }
                                                 }
                                             }
 
-                                            // --- NPC detection ---
+                                            // NPC detection
                                             java.lang.reflect.Method getNpcs = client.getClass().getMethod("getNpcs");
                                             java.util.List<?> npcs = (java.util.List<?>) getNpcs.invoke(client);
                                             java.util.Set<String> seenNpcs = new java.util.HashSet<>();
@@ -177,13 +159,13 @@ public class RuneliteInjectionAgent {
                                                 seenNpcs.add(key);
                                                 if (!lastNpcs.contains(key)) {
                                                     com.osrsbot.events.EventBus.publish(
-                                                        new com.osrsbot.events.events.NpcDetectedEvent(name, id, x, y)
+                                                            new com.osrsbot.events.events.NpcDetectedEvent(name, id, x, y)
                                                     );
                                                 }
                                             }
                                             lastNpcs = seenNpcs;
                                         }
-                                    } catch (Exception ignored) {}
+                                    } catch (Exception ignored) { }
 
                                     Thread.sleep(600); // OSRS game tick ~600ms
                                 } catch (InterruptedException e) {
@@ -209,16 +191,16 @@ public class RuneliteInjectionAgent {
                         try {
                             Object client = com.osrsbot.hooks.ClientReflection.getClient();
                             if (client != null) {
-                                ClassLoader cl = client.getClass().getClassLoader();
-                                Class<?> versionClass = cl.loadClass("net.runelite.api.Client");
-                                java.lang.Package p = versionClass.getPackage();
-                                String version = (p != null) ? p.getImplementationVersion() : null;
+                                Class<?> versionClass = client.getClass().getClassLoader().loadClass("net.runelite.api.Client");
+                                java.lang.Package pkg = versionClass.getPackage();
+                                String version = (pkg != null) ? pkg.getImplementationVersion() : null;
                                 if (version != null && !version.equals("EXPECTED_VERSION")) {
                                     com.osrsbot.debug.DebugManager.logWarn("RuneLite version mismatch: Detected " + version + ", expected EXPECTED_VERSION");
                                     com.osrsbot.gui.OverlayManager.showInfo("WARNING: RuneLite version mismatch, update hooks!");
                                 }
                             }
                         } catch (Exception ignored) {}
+
                     } else {
                         DebugManager.logWarn("Could not find RuneLite Client instance (null).");
                     }
@@ -226,8 +208,7 @@ public class RuneliteInjectionAgent {
                     DebugManager.logException(e);
                 }
             }
-
-            // Return null to keep class as-is unless you want to modify the bytecode.
+            // Always return null to not transform class bytes
             return null;
         }
     }
