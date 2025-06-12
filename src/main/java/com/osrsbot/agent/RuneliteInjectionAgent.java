@@ -65,6 +65,10 @@ public class RuneliteInjectionAgent {
                         // Register modules/plugins
                         com.osrsbot.modules.ModuleManager.register(new com.osrsbot.antiban.AntibanManager());
                         com.osrsbot.modules.ModuleManager.startAll();
+
+                        // Register and start example script(s)
+                        com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoChatterScript());
+                        com.osrsbot.scripts.ScriptManager.startAll();
                     } else {
                         DebugManager.logWarn("Could not find RuneLite Client instance (null).");
                     }
