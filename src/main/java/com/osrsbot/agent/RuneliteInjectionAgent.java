@@ -72,6 +72,10 @@ public class RuneliteInjectionAgent {
                         // Register and start example script(s)
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoChatterScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoWalkerScript());
+
+                        // Dynamically load scripts from "scripts/" directory if present
+                        com.osrsbot.scripts.ScriptManager.loadScriptsFromDirectory("scripts");
+
                         com.osrsbot.scripts.ScriptManager.startAll();
 
                         // Start the command console in a new thread for live control

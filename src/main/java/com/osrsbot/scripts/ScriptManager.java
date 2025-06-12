@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 /**
  * Manages loading, starting, and stopping of scripts.
@@ -18,6 +21,38 @@ public class ScriptManager {
     public static void register(Script script) {
         scripts.add(script);
         DebugManager.logInfo("Script registered: " + script.getName());
+    }
+
+    /**
+     * Dynamically loads all Script classes from the "scripts" directory.
+     * Only classes implementing Script and having a no-arg constructor are loaded.
+     */
+    public static void loadScriptsFromDirectory(String dirPath) {
+        File dir = new File(dirPath);
+        if (!dir.exists() || !dir.isDirectory()) {
+            DebugManager.logWarn("Script directory not found: " + dirPath);
+            return;
+        }
+        try {
+            URL[] urls = {dir.toURI().toURL()};
+            try (URLClassLoader loader = new URLClassLoader(urls, Script.class.getClassLoader())) {
+                for (File file : dir.listFiles((d, name) -> name.endsWith(".class"))) {
+                    String className = file.getName().replace(".class", "");
+                    try {
+                        Class<?> cls = loader.loadClass(className);
+                        if (Script.class.isAssignableFrom(cls)) {
+                            Script script = (Script) cls.getDeclaredConstructor().newInstance();
+                            register(script);
+                        }
+                    } catch (Exception e) {
+                        DebugManager.logWarn("Failed to load script: " + className);
+                        DebugManager.logException(e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            DebugManager.logException(e);
+        }
     }
 
     public static void startAll() {
