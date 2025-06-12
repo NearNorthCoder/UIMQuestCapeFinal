@@ -49,6 +49,11 @@ public class CommandConsole implements Runnable {
                     if (parts.length > 1) stopScript(parts[1]);
                     else System.out.println("Usage: stop <script>");
                 }
+                case "restart" -> {
+                    if (parts.length > 1) restartScript(parts[1]);
+                    else System.out.println("Usage: restart <script>");
+                }
+                case "status" -> showStatus();
                 case "modules" -> listModules();
                 case "exit", "quit" -> {
                     running = false;
@@ -62,18 +67,46 @@ public class CommandConsole implements Runnable {
     private void printHelp() {
         System.out.println("""
         Commands:
-          help           Show this help menu
-          list           List loaded scripts
-          start <script> Start a script by name
-          stop <script>  Stop a script by name
-          modules        List loaded modules
-          exit/quit      Exit the console
+          help             Show this help menu
+          list             List loaded scripts
+          start <script>   Start a script by name
+          stop <script>    Stop a script by name
+          restart <script> Restart a script by name
+          status           Show status of all scripts and modules
+          modules          List loaded modules
+          exit/quit        Exit the console
         """);
         if (!customCommands.isEmpty()) {
             System.out.println("Custom commands:");
             for (String cmd : customCommands.keySet()) {
                 System.out.println("  " + cmd);
             }
+        }
+    }
+
+    private void restartScript(String name) {
+        for (Script script : ScriptManager.getScripts()) {
+            if (script.getName().equalsIgnoreCase(name)) {
+                ScriptManager.restart(script);
+                System.out.println("Restarted script: " + name);
+                return;
+            }
+        }
+        System.out.println("Script not found: " + name);
+    }
+
+    private void showStatus() {
+        System.out.println("Script Status:");
+        for (Script script : ScriptManager.getScripts()) {
+            System.out.println("  " + script.getName() + " [" + ScriptManager.getScriptState(script) + "]");
+        }
+        System.out.println("Module Status:");
+        for (var mod : ModuleManager.getModules()) {
+            System.out.println("  " + mod.getName());
+        }
+        String critical = com.osrsbot.debug.DebugManager.getLastCriticalError();
+        if (critical != null) {
+            System.out.println("Last Critical Error: " + critical);
         }
     }
 
