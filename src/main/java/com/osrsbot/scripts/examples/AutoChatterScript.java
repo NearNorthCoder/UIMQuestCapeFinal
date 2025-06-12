@@ -36,10 +36,10 @@ public class AutoChatterScript implements Script {
             try {
                 String[] messages = {
                     "Hello Gielinor!",
-                    "Automated message from OSRSBot.",
+                   // "Automated message from OSRSBot.",
                     "Just grinding some skills.",
                     "GL HF everyone!",
-                    "Bots? Where?!"
+                    //"Bots? Where?!"
                 };
                 String msg = messages[rng.nextInt(messages.length)];
                 ApiManager.get().chat.sendPublicMessage(msg);
