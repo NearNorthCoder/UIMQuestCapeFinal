@@ -1,0 +1,145 @@
+package com.osrsbot.scripts;
+
+import com.osrsbot.debug.DebugManager;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+
+/**
+ * Manages loading, starting, and stopping of scripts.
+ */
+/**
+ * Manages loading, starting, stopping, and restarting of scripts.
+ * Tracks script states and allows for robust lifecycle management.
+ */
+public class ScriptManager {
+    private static final List<Script> scripts = new ArrayList<>();
+    private static final java.util.Map<Script, ScriptState> scriptStates = new java.util.HashMap<>();
+    private static final ExecutorService executor = Executors.newCachedThreadPool();
+
+    public static void register(Script script) {
+        scripts.add(script);
+        DebugManager.logInfo("Script registered: " + script.getName());
+    }
+
+    /**
+     * Dynamically loads all Script classes from the "scripts" directory.
+     * Only classes implementing Script and having a no-arg constructor are loaded.
+     */
+    /**
+     * Dynamically loads all Script classes from the provided directory.
+     * Only classes implementing Script and having a no-arg constructor are loaded.
+     */
+    public static void loadScriptsFromDirectory(String dirPath) {
+        File dir = new File(dirPath);
+        if (!dir.exists() || !dir.isDirectory()) {
+            DebugManager.logWarn("Script directory not found: " + dirPath);
+            return;
+        }
+        try {
+            URL[] urls = {dir.toURI().toURL()};
+            try (URLClassLoader loader = new URLClassLoader(urls, Script.class.getClassLoader())) {
+                for (File file : dir.listFiles((d, name) -> name.endsWith(".class"))) {
+                    String className = file.getName().replace(".class", "");
+                    try {
+                        Class<?> cls = loader.loadClass(className);
+                        if (Script.class.isAssignableFrom(cls)) {
+                            Script script = (Script) cls.getDeclaredConstructor().newInstance();
+                            register(script);
+                        }
+                    } catch (Exception e) {
+                        DebugManager.logWarn("Failed to load script: " + className);
+                        DebugManager.logException(e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            DebugManager.logException(e);
+        }
+    }
+
+    public static void startAll() {
+        for (Script script : scripts) {
+            start(script);
+        }
+    }
+
+    public static void start(Script script) {
+        try {
+            script.onStart();
+            // Track state as RUNNING
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.RUNNING);
+            }
+            executor.submit(() -> {
+                try {
+                    script.run();
+                    if (scriptStates != null) {
+                        scriptStates.put(script, ScriptState.STOPPED);
+                    }
+                } catch (Exception e) {
+                    DebugManager.logException(e);
+                    if (scriptStates != null) {
+                        scriptStates.put(script, ScriptState.ERROR);
+                    }
+                    com.osrsbot.gui.OverlayManager.showInfo("[Script ERROR] " + script.getName() + ": " + e.getMessage());
+                    com.osrsbot.gui.OverlayManager.notify("[Script ERROR] " + script.getName());
+                }
+            });
+            // Publish event
+            com.osrsbot.events.EventBus.publish(new com.osrsbot.events.events.ScriptStartedEvent(script));
+        } catch (Exception e) {
+            DebugManager.logException(e);
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.ERROR);
+            }
+            com.osrsbot.gui.OverlayManager.showInfo("[Script ERROR] " + script.getName() + ": " + e.getMessage());
+            com.osrsbot.gui.OverlayManager.notify("[Script ERROR] " + script.getName());
+        }
+    }
+
+    /**
+     * Stop a running script and update its state.
+     */
+    public static void stop(Script script) {
+        try {
+            script.onStop();
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.STOPPED);
+            }
+            com.osrsbot.events.EventBus.publish(new com.osrsbot.events.events.ScriptStoppedEvent(script));
+        } catch (Exception e) {
+            DebugManager.logException(e);
+            if (scriptStates != null) {
+                scriptStates.put(script, ScriptState.ERROR);
+            }
+            com.osrsbot.gui.OverlayManager.showInfo("[Script ERROR] " + script.getName() + ": " + e.getMessage());
+            com.osrsbot.gui.OverlayManager.notify("[Script ERROR] " + script.getName());
+        }
+    }
+
+    /**
+     * Stop all running scripts and update their states.
+     */
+    public static void stopAll() {
+        for (Script script : scripts) {
+            stop(script);
+        }
+        executor.shutdownNow();
+    }
+
+    /**
+     * Get the list of registered scripts.
+     */
+    public static List<Script> getScripts() {
+        return Collections.unmodifiableList(scripts);
+    }
+
+    // Removed duplicate loader: use loadScriptsFromDirectory(String)
+}
