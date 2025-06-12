@@ -75,6 +75,7 @@ public class ScriptManager {
     public static void stop(Script script) {
         try {
             script.onStop();
+            com.osrsbot.events.EventBus.publish(new com.osrsbot.events.events.ScriptStoppedEvent(script));
         } catch (Exception e) {
             DebugManager.logException(e);
         }

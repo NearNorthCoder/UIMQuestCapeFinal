@@ -16,6 +16,13 @@ public class EventBus {
         listeners.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(handler);
     }
 
+    public static <T> void unsubscribe(Class<T> eventType, Consumer<T> handler) {
+        List<Consumer<?>> handlers = listeners.get(eventType);
+        if (handlers != null) {
+            handlers.remove(handler);
+        }
+    }
+
     public static <T> void publish(T event) {
         List<Consumer<?>> handlers = listeners.get(event.getClass());
         if (handlers != null) {

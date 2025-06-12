@@ -12,6 +12,13 @@ public class DebugManager {
 
     private static Level currentLevel = Level.DEBUG;
     private static boolean traceApiCalls = true;
+    private static PrintWriter fileLogger = null;
+
+    static {
+        try {
+            fileLogger = new PrintWriter(new FileWriter("osrsbot.log", true), true);
+        } catch (Exception ignored) {}
+    }
 
     public static void setLevel(Level level) {
         currentLevel = level;
