@@ -10,6 +10,8 @@ public class OverlayManager {
     private static String lastCriticalError = null;
     private static final java.util.LinkedList<String> recentEvents = new java.util.LinkedList<>();
     private static final int MAX_EVENTS = 5;
+    private static String notification = null;
+    private static long notificationUntil = 0;
 
     public static void showInfo(String info) {
         // For now, print to console. In a real overlay, render in-client.

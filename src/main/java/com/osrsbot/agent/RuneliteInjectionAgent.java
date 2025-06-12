@@ -87,6 +87,8 @@ public class RuneliteInjectionAgent {
                             String lastChat = "";
                             java.util.List<String> lastInventory = java.util.Collections.emptyList();
                             java.util.Map<String, Integer> lastXp = new java.util.HashMap<>();
+                            int lastRegionId = -1;
+                            java.util.Set<String> lastNpcs = new java.util.HashSet<>();
                             while (true) {
                                 try {
                                     com.osrsbot.events.EventBus.publish(
@@ -117,7 +119,6 @@ public class RuneliteInjectionAgent {
                                     }
 
                                     // --- XP change event detection (polls all skills) ---
-                                    // Try to get skills and their XP from the client via reflection
                                     try {
                                         Object client = com.osrsbot.hooks.ClientReflection.getClient();
                                         if (client != null) {
@@ -134,6 +135,52 @@ public class RuneliteInjectionAgent {
                                                     );
                                                 }
                                             }
+                                            // --- Region change detection ---
+                                            java.lang.reflect.Method getLocalPlayer = client.getClass().getMethod("getLocalPlayer");
+                                            Object player = getLocalPlayer.invoke(client);
+                                            if (player != null) {
+                                                java.lang.reflect.Method getWorldLocation = player.getClass().getMethod("getWorldLocation");
+                                                Object worldLoc = getWorldLocation.invoke(player);
+                                                if (worldLoc != null) {
+                                                    java.lang.reflect.Method getRegionId = worldLoc.getClass().getMethod("getRegionID");
+                                                    int regionId = ((Number) getRegionId.invoke(worldLoc)).intValue();
+                                                    if (regionId != lastRegionId) {
+                                                        lastRegionId = regionId;
+                                                        com.osrsbot.events.EventBus.publish(
+                                                            new com.osrsbot.events.events.RegionChangedEvent(regionId)
+                                                        );
+                                                    }
+                                                }
+                                            }
+
+                                            // --- NPC detection ---
+                                            java.lang.reflect.Method getNpcs = client.getClass().getMethod("getNpcs");
+                                            java.util.List<?> npcs = (java.util.List<?>) getNpcs.invoke(client);
+                                            java.util.Set<String> seenNpcs = new java.util.HashSet<>();
+                                            for (Object npc : npcs) {
+                                                java.lang.reflect.Method getId = npc.getClass().getMethod("getId");
+                                                int id = ((Number) getId.invoke(npc)).intValue();
+                                                java.lang.reflect.Method getName = npc.getClass().getMethod("getName");
+                                                Object nameObj = getName.invoke(npc);
+                                                String name = nameObj != null ? nameObj.toString() : ("id_" + id);
+                                                java.lang.reflect.Method getWorldLocation = npc.getClass().getMethod("getWorldLocation");
+                                                Object npcLoc = getWorldLocation.invoke(npc);
+                                                int x = -1, y = -1;
+                                                if (npcLoc != null) {
+                                                    java.lang.reflect.Method getX = npcLoc.getClass().getMethod("getX");
+                                                    java.lang.reflect.Method getY = npcLoc.getClass().getMethod("getY");
+                                                    x = ((Number) getX.invoke(npcLoc)).intValue();
+                                                    y = ((Number) getY.invoke(npcLoc)).intValue();
+                                                }
+                                                String key = name + ":" + id + ":" + x + ":" + y;
+                                                seenNpcs.add(key);
+                                                if (!lastNpcs.contains(key)) {
+                                                    com.osrsbot.events.EventBus.publish(
+                                                        new com.osrsbot.events.events.NpcDetectedEvent(name, id, x, y)
+                                                    );
+                                                }
+                                            }
+                                            lastNpcs = seenNpcs;
                                         }
                                     } catch (Exception ignored) {}
 
