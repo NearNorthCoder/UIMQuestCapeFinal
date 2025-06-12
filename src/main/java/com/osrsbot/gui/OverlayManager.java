@@ -66,6 +66,8 @@ public class OverlayManager {
         lastCriticalError = err;
     }
 
+    // --- REQUIRED STATIC METHODS FOR OTHER COMPONENTS ---
+
     public static void pushEvent(String event) {
         if (recentEvents.size() == MAX_EVENTS) recentEvents.removeFirst();
         recentEvents.addLast(event);
