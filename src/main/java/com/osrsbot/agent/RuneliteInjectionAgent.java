@@ -80,6 +80,23 @@ public class RuneliteInjectionAgent {
 
                         // Start the command console in a new thread for live control
                         new Thread(new com.osrsbot.console.CommandConsole(), "CommandConsole").start();
+
+                        // Start game tick polling and overlay updates
+                        new Thread(() -> {
+                            while (true) {
+                                try {
+                                    com.osrsbot.events.EventBus.publish(
+                                        new com.osrsbot.events.events.TickEvent(System.currentTimeMillis())
+                                    );
+                                    com.osrsbot.gui.OverlayManager.updateOverlay();
+                                    Thread.sleep(600); // OSRS game tick ~600ms
+                                } catch (InterruptedException e) {
+                                    break;
+                                } catch (Exception ex) {
+                                    com.osrsbot.debug.DebugManager.logException(ex);
+                                }
+                            }
+                        }, "TickAndOverlayLoop").start();
                     } else {
                         DebugManager.logWarn("Could not find RuneLite Client instance (null).");
                     }

@@ -10,8 +10,16 @@ import java.util.Scanner;
 /**
  * Simple command-line console for live bot control.
  */
+import java.util.HashMap;
+import java.util.Map;
+
 public class CommandConsole implements Runnable {
     private volatile boolean running = true;
+    private static final Map<String, Runnable> customCommands = new HashMap<>();
+
+    public static void registerCommand(String cmd, Runnable handler) {
+        customCommands.put(cmd.toLowerCase(), handler);
+    }
 
     @Override
     public void run() {
@@ -24,6 +32,11 @@ public class CommandConsole implements Runnable {
             String[] parts = line.trim().split("\\s+");
             if (parts.length == 0) continue;
             String cmd = parts[0].toLowerCase();
+
+            if (customCommands.containsKey(cmd)) {
+                customCommands.get(cmd).run();
+                continue;
+            }
 
             switch (cmd) {
                 case "help" -> printHelp();
@@ -56,6 +69,12 @@ public class CommandConsole implements Runnable {
           modules        List loaded modules
           exit/quit      Exit the console
         """);
+        if (!customCommands.isEmpty()) {
+            System.out.println("Custom commands:");
+            for (String cmd : customCommands.keySet()) {
+                System.out.println("  " + cmd);
+            }
+        }
     }
 
     private void listScripts() {

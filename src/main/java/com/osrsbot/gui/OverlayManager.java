@@ -6,7 +6,27 @@ package com.osrsbot.gui;
  */
 public class OverlayManager {
     public static void showInfo(String info) {
-        // TODO: Implement overlay rendering
+        // For now, print to console. In a real overlay, render in-client.
         System.out.println("[OVERLAY] " + info);
+    }
+
+    public static void updateOverlay() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Active Scripts: ");
+        var scripts = com.osrsbot.scripts.ScriptManager.getScripts();
+        boolean any = false;
+        for (var script : scripts) {
+            sb.append(script.getName()).append(" ");
+            any = true;
+        }
+        if (!any) sb.append("(none) ");
+        sb.append("| Modules: ");
+        var mods = com.osrsbot.modules.ModuleManager.getModules();
+        any = false;
+        for (var mod : mods) {
+            sb.append(mod.getName()).append(" ");
+            any = true;
+        }
+        showInfo(sb.toString());
     }
 }
