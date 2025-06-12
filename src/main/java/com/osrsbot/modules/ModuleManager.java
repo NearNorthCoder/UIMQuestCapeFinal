@@ -12,6 +12,14 @@ import java.util.List;
 public class ModuleManager {
     private static final List<BotModule> modules = new ArrayList<>();
 
+    static {
+        // Example: subscribe to ScriptStartedEvent
+        com.osrsbot.events.EventBus.subscribe(
+            com.osrsbot.events.events.ScriptStartedEvent.class,
+            event -> DebugManager.logInfo("[EVENT] Script started: " + event.script().getName())
+        );
+    }
+
     public static void register(BotModule module) {
         modules.add(module);
         DebugManager.logInfo("Module registered: " + module.getName());

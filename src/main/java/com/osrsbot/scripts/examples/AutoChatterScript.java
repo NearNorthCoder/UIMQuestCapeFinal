@@ -3,7 +3,9 @@ package com.osrsbot.scripts.examples;
 import com.osrsbot.scripts.Script;
 import com.osrsbot.api.ApiManager;
 import com.osrsbot.debug.DebugManager;
+import com.osrsbot.config.ConfigManager;
 
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -22,6 +24,11 @@ public class AutoChatterScript implements Script {
     public void onStart() {
         running = true;
         DebugManager.logInfo("AutoChatterScript started.");
+        // Example of using config for persistent state
+        Map<String, Object> config = ConfigManager.getConfig(getName());
+        if (config.containsKey("lastMessage")) {
+            DebugManager.logInfo("Last message sent: " + config.get("lastMessage"));
+        }
     }
 
     @Override
@@ -44,6 +51,10 @@ public class AutoChatterScript implements Script {
                 String msg = messages[rng.nextInt(messages.length)];
                 ApiManager.get().chat.sendPublicMessage(msg);
                 DebugManager.logInfo("AutoChatterScript: Sent message '" + msg + "'");
+                // Save message to config for persistence
+                Map<String, Object> config = ConfigManager.getConfig(getName());
+                config.put("lastMessage", msg);
+                ConfigManager.saveConfig(getName(), config);
                 Thread.sleep(30000 + rng.nextInt(30000));
             } catch (InterruptedException e) {
                 break;

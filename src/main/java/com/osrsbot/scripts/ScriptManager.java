@@ -65,6 +65,8 @@ public class ScriptManager {
         try {
             script.onStart();
             executor.submit(script);
+            // Publish event
+            com.osrsbot.events.EventBus.publish(new com.osrsbot.events.events.ScriptStartedEvent(script));
         } catch (Exception e) {
             DebugManager.logException(e);
         }
