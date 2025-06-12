@@ -72,6 +72,7 @@ public class RuneliteInjectionAgent {
                         // Register and start example script(s)
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoChatterScript());
                         com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.AutoWalkerScript());
+                        com.osrsbot.scripts.ScriptManager.register(new com.osrsbot.scripts.examples.ChatLoggerScript());
 
                         // Dynamically load scripts from "scripts/" directory if present
                         com.osrsbot.scripts.ScriptManager.loadScriptsFromDirectory("scripts");
@@ -83,12 +84,36 @@ public class RuneliteInjectionAgent {
 
                         // Start game tick polling and overlay updates
                         new Thread(() -> {
+                            String lastChat = "";
+                            java.util.List<String> lastInventory = java.util.Collections.emptyList();
                             while (true) {
                                 try {
                                     com.osrsbot.events.EventBus.publish(
                                         new com.osrsbot.events.events.TickEvent(System.currentTimeMillis())
                                     );
                                     com.osrsbot.gui.OverlayManager.updateOverlay();
+
+                                    // --- Chat message event detection ---
+                                    String[] messages = com.osrsbot.api.ApiManager.get().chat.getLatestMessages(1);
+                                    if (messages.length > 0 && !messages[0].equals(lastChat)) {
+                                        lastChat = messages[0];
+                                        // For demo, type is "PUBLIC", sender is unknown (would require deeper hook)
+                                        com.osrsbot.events.EventBus.publish(
+                                            new com.osrsbot.events.events.ChatMessageEvent("unknown", lastChat, "PUBLIC")
+                                        );
+                                    }
+
+                                    // --- Inventory change event detection ---
+                                    var items = com.osrsbot.api.ApiManager.get().inventory.getInventory();
+                                    java.util.List<String> names = new java.util.ArrayList<>();
+                                    for (var i : items) names.add(i.name);
+                                    if (!names.equals(lastInventory)) {
+                                        lastInventory = names;
+                                        com.osrsbot.events.EventBus.publish(
+                                            new com.osrsbot.events.events.InventoryChangedEvent(names)
+                                        );
+                                    }
+
                                     Thread.sleep(600); // OSRS game tick ~600ms
                                 } catch (InterruptedException e) {
                                     break;
